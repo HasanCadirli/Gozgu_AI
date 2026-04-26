@@ -1,0 +1,813 @@
+/* ================================================================
+   GÖZGÜ AI — LIGHT THEME OVERRIDE LAYER
+   ================================================================
+   Bu dosya SADECE açık tema (light mode) için CSS override'ları içerir.
+   html elementinden "dark" class'ı kaldırıldığında aktif olur.
+   Mevcut hiçbir CSS kuralını DEĞİŞTİRMEZ, sadece üzerine yazar.
+   ================================================================ */
+
+/* ────────────────────────────────────────────
+   THEME TOGGLE BUTTON
+   ──────────────────────────────────────────── */
+.theme-toggle-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.05);
+  color: #9ca3af;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+}
+.theme-toggle-btn:hover {
+  border-color: #00f3ff;
+  color: #00f3ff;
+  background: rgba(0,243,255,0.1);
+  box-shadow: 0 0 12px rgba(0,243,255,0.2);
+}
+
+/* Light mode toggle button style */
+html:not(.dark) .theme-toggle-btn {
+  border-color: #d1d5db;
+  background: #f3f4f6;
+  color: #6b7280;
+}
+html:not(.dark) .theme-toggle-btn:hover {
+  border-color: #6366f1;
+  color: #6366f1;
+  background: #eef2ff;
+  box-shadow: 0 0 12px rgba(99,102,241,0.15);
+}
+
+/* ────────────────────────────────────────────
+   SMOOTH THEME TRANSITION
+   ──────────────────────────────────────────── */
+html.theme-transition,
+html.theme-transition *,
+html.theme-transition *:before,
+html.theme-transition *:after {
+  transition: background-color 0.4s ease,
+              color 0.3s ease,
+              border-color 0.3s ease,
+              box-shadow 0.3s ease !important;
+}
+
+
+/* ================================================================
+   LIGHT MODE OVERRIDES — html:not(.dark)
+   ================================================================ */
+
+
+/* ────────────────────────────────────────────
+   1. BASE / BODY
+   ──────────────────────────────────────────── */
+html:not(.dark) body {
+  background-color: #f8fafc !important;
+  color: #1e293b !important;
+}
+
+
+/* ────────────────────────────────────────────
+   2. SPECIAL EFFECTS — Disable/Soften
+   ──────────────────────────────────────────── */
+html:not(.dark) .scanline-overlay {
+  display: none !important;
+}
+
+html:not(.dark) .bg-grid {
+  background-image:
+    linear-gradient(to right, rgba(99,102,241,0.06) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(99,102,241,0.06) 1px, transparent 1px) !important;
+  opacity: 0.5 !important;
+}
+
+html:not(.dark) .glitch-text::before,
+html:not(.dark) .glitch-text::after {
+  display: none !important;
+}
+
+
+/* ────────────────────────────────────────────
+   3. HUD BORDER COMPONENT
+   ──────────────────────────────────────────── */
+html:not(.dark) .hud-border {
+  border-color: #e2e8f0 !important;
+  background: rgba(255,255,255,0.9) !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04) !important;
+}
+html:not(.dark) .hud-border::before {
+  border-top-color: #6366f1 !important;
+  border-left-color: #6366f1 !important;
+}
+html:not(.dark) .hud-border::after {
+  border-bottom-color: #6366f1 !important;
+  border-right-color: #6366f1 !important;
+}
+html:not(.dark) .hud-corner-tr {
+  border-top-color: #6366f1 !important;
+  border-right-color: #6366f1 !important;
+}
+html:not(.dark) .hud-corner-bl {
+  border-bottom-color: #6366f1 !important;
+  border-left-color: #6366f1 !important;
+}
+
+
+/* ────────────────────────────────────────────
+   4. TAILWIND COLOR OVERRIDES — Backgrounds
+   ──────────────────────────────────────────── */
+
+/* Primary backgrounds */
+html:not(.dark) .bg-cyber-black {
+  background-color: #ffffff !important;
+}
+html:not(.dark) .bg-cyber-dark {
+  background-color: #f1f5f9 !important;
+}
+html:not(.dark) .bg-black {
+  background-color: #ffffff !important;
+}
+
+/* Semi-transparent blacks → Semi-transparent light */
+html:not(.dark) .bg-black\/40,
+html:not(.dark) [class*="bg-black/4"] {
+  background-color: rgba(241,245,249,0.6) !important;
+}
+html:not(.dark) .bg-black\/50,
+html:not(.dark) [class*="bg-black/5"]:not([class*="bg-black/50"]):not([class*="bg-black/5 "]) {
+  background-color: rgba(241,245,249,0.7) !important;
+}
+html:not(.dark) .bg-black\/60,
+html:not(.dark) [class*="bg-black/6"] {
+  background-color: rgba(241,245,249,0.8) !important;
+}
+html:not(.dark) .bg-black\/80 {
+  background-color: rgba(255,255,255,0.95) !important;
+}
+html:not(.dark) .bg-black\/90 {
+  background-color: rgba(255,255,255,0.97) !important;
+}
+
+/* Semi-transparent whites → subtle grays */
+html:not(.dark) [class*="bg-white/5"] {
+  background-color: rgba(0,0,0,0.02) !important;
+}
+html:not(.dark) [class*="bg-white/10"] {
+  background-color: rgba(0,0,0,0.04) !important;
+}
+
+/* Gray backgrounds */
+html:not(.dark) .bg-gray-900 {
+  background-color: #f8fafc !important;
+}
+html:not(.dark) .bg-gray-800 {
+  background-color: #f1f5f9 !important;
+}
+
+/* Header/nav specific backgrounds */
+html:not(.dark) .bg-cyber-black\/90,
+html:not(.dark) [class*="bg-cyber-black/9"] {
+  background-color: rgba(255,255,255,0.95) !important;
+}
+html:not(.dark) .bg-cyber-dark\/90 {
+  background-color: rgba(241,245,249,0.95) !important;
+}
+
+/* Neon accent backgrounds stay but soften */
+html:not(.dark) [class*="bg-neon-cyan/1"],
+html:not(.dark) [class*="bg-neon-cyan/5"] {
+  background-color: rgba(99,102,241,0.06) !important;
+}
+html:not(.dark) [class*="bg-neon-magenta/1"],
+html:not(.dark) [class*="bg-neon-magenta/5"] {
+  background-color: rgba(168,85,247,0.06) !important;
+}
+html:not(.dark) [class*="bg-neon-violet/1"],
+html:not(.dark) [class*="bg-neon-violet/5"] {
+  background-color: rgba(124,58,237,0.06) !important;
+}
+
+
+/* ────────────────────────────────────────────
+   5. TEXT COLORS
+   ──────────────────────────────────────────── */
+
+/* White text → Dark text */
+html:not(.dark) .text-white {
+  color: #0f172a !important;
+}
+
+/* Gray text → Appropriate dark variants */
+html:not(.dark) .text-gray-200 { color: #334155 !important; }
+html:not(.dark) .text-gray-300 { color: #475569 !important; }
+html:not(.dark) .text-gray-400 { color: #64748b !important; }
+html:not(.dark) .text-gray-500 { color: #94a3b8 !important; }
+html:not(.dark) .text-gray-600 { color: #94a3b8 !important; }
+
+/* Neon accents → Professional readable versions */
+html:not(.dark) .text-neon-cyan {
+  color: #0e7490 !important;
+}
+html:not(.dark) .text-neon-magenta {
+  color: #a21caf !important;
+}
+html:not(.dark) .text-neon-violet {
+  color: #6d28d9 !important;
+}
+
+
+/* ────────────────────────────────────────────
+   6. BORDER COLORS
+   ──────────────────────────────────────────── */
+
+/* White/transparent borders */
+html:not(.dark) [class*="border-white/"] {
+  border-color: rgba(0,0,0,0.08) !important;
+}
+html:not(.dark) .border-white\/10,
+html:not(.dark) .border-white\/5 {
+  border-color: #e2e8f0 !important;
+}
+
+/* Gray borders */
+html:not(.dark) .border-gray-700 {
+  border-color: #d1d5db !important;
+}
+html:not(.dark) .border-gray-800 {
+  border-color: #e5e7eb !important;
+}
+
+/* Neon borders */
+html:not(.dark) [class*="border-neon-cyan"] {
+  border-color: rgba(14,116,144,0.4) !important;
+}
+html:not(.dark) [class*="border-neon-magenta"] {
+  border-color: rgba(162,28,175,0.4) !important;
+}
+html:not(.dark) [class*="border-neon-violet"] {
+  border-color: rgba(109,40,217,0.4) !important;
+}
+
+
+/* ────────────────────────────────────────────
+   7. NEON SHADOW EFFECTS → Subtle shadows
+   ──────────────────────────────────────────── */
+html:not(.dark) .shadow-neon-cyan,
+html:not(.dark) [class*="shadow-neon-cyan"],
+html:not(.dark) [style*="box-shadow"][style*="00f3ff"] {
+  box-shadow: 0 4px 14px rgba(99,102,241,0.12) !important;
+}
+html:not(.dark) [class*="shadow-\\[0_0"] {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06) !important;
+}
+
+
+/* ────────────────────────────────────────────
+   8. BUTTONS
+   ──────────────────────────────────────────── */
+
+/* Primary CTA — neon-cyan background */
+html:not(.dark) .bg-neon-cyan {
+  background-color: #4f46e5 !important;
+  color: #ffffff !important;
+}
+html:not(.dark) .bg-neon-cyan:hover {
+  background-color: #4338ca !important;
+}
+
+/* Magenta background buttons */
+html:not(.dark) .bg-neon-magenta {
+  background-color: #9333ea !important;
+  color: #ffffff !important;
+}
+html:not(.dark) .bg-neon-magenta:hover {
+  background-color: #7e22ce !important;
+}
+
+/* Auth submit button override */
+html:not(.dark) .bg-white.text-black,
+html:not(.dark) button.bg-white {
+  background-color: #4f46e5 !important;
+  color: #ffffff !important;
+}
+
+
+/* ────────────────────────────────────────────
+   9. FORM INPUTS
+   ──────────────────────────────────────────── */
+html:not(.dark) input[type="text"],
+html:not(.dark) input[type="email"],
+html:not(.dark) input[type="password"],
+html:not(.dark) input[type="url"],
+html:not(.dark) input[type="search"],
+html:not(.dark) textarea,
+html:not(.dark) select {
+  background-color: #ffffff !important;
+  border-color: #d1d5db !important;
+  color: #1e293b !important;
+}
+html:not(.dark) input::placeholder,
+html:not(.dark) textarea::placeholder {
+  color: #9ca3af !important;
+}
+html:not(.dark) input:focus,
+html:not(.dark) textarea:focus,
+html:not(.dark) select:focus {
+  border-color: #6366f1 !important;
+  box-shadow: 0 0 0 2px rgba(99,102,241,0.15) !important;
+}
+html:not(.dark) option {
+  background-color: #ffffff !important;
+  color: #1e293b !important;
+}
+
+
+/* ────────────────────────────────────────────
+   10. SCROLLBAR
+   ──────────────────────────────────────────── */
+html:not(.dark) .custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(0,0,0,0.03) !important;
+}
+html:not(.dark) .custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(99,102,241,0.25) !important;
+}
+html:not(.dark) .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(99,102,241,0.5) !important;
+}
+
+
+/* ────────────────────────────────────────────
+   11. MODALS
+   ──────────────────────────────────────────── */
+html:not(.dark) #auth-modal .bg-cyber-dark,
+html:not(.dark) #campaign-modal .bg-cyber-dark,
+html:not(.dark) #channel-detail-modal .bg-cyber-dark,
+html:not(.dark) [id$="-modal"] > div {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 25px 50px rgba(0,0,0,0.15) !important;
+}
+
+/* Modal overlay */
+html:not(.dark) #auth-modal,
+html:not(.dark) #campaign-modal,
+html:not(.dark) #channel-detail-modal {
+  background-color: rgba(15,23,42,0.5) !important;
+}
+
+
+/* ────────────────────────────────────────────
+   12. HEADER / NAVBAR
+   ──────────────────────────────────────────── */
+html:not(.dark) header {
+  background-color: rgba(255,255,255,0.92) !important;
+  border-bottom-color: #e2e8f0 !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05) !important;
+}
+
+
+/* ────────────────────────────────────────────
+   13. FOOTER
+   ──────────────────────────────────────────── */
+html:not(.dark) footer {
+  background-color: #f1f5f9 !important;
+  border-top-color: #e2e8f0 !important;
+}
+html:not(.dark) footer .text-white {
+  color: #1e293b !important;
+}
+
+
+/* ────────────────────────────────────────────
+   14. PERSONA CARDS / SELECTION
+   ──────────────────────────────────────────── */
+html:not(.dark) input[type="checkbox"]:checked + .persona-checkbox-label {
+  border-color: #4f46e5 !important;
+  background-color: rgba(79,70,229,0.06) !important;
+}
+html:not(.dark) input[type="checkbox"]:checked + .persona-checkbox-label .check-icon {
+  color: #4f46e5 !important;
+}
+html:not(.dark) input[type="checkbox"]:checked + .persona-checkbox-label .persona-name {
+  color: #4f46e5 !important;
+}
+
+
+/* ────────────────────────────────────────────
+   15. CHANNEL TAB SYSTEM (.ch-tab)
+   ──────────────────────────────────────────── */
+html:not(.dark) .ch-tab.active {
+  color: #4f46e5 !important;
+  border-bottom-color: #4f46e5 !important;
+}
+
+
+/* ────────────────────────────────────────────
+   16. DASHBOARD TAB SYSTEM (.tab-btn)
+   ──────────────────────────────────────────── */
+html:not(.dark) .tab-btn.active {
+  color: #0f172a !important;
+}
+html:not(.dark) .tab-btn.active::after {
+  background: #4f46e5 !important;
+  box-shadow: 0 0 8px rgba(79,70,229,0.3) !important;
+}
+html:not(.dark) .tab-btn {
+  color: #94a3b8 !important;
+}
+html:not(.dark) .tab-btn:hover {
+  color: #475569 !important;
+}
+
+
+/* ────────────────────────────────────────────
+   17. PROGRESS BARS
+   ──────────────────────────────────────────── */
+html:not(.dark) .progress-bar-bg {
+  background: rgba(0,0,0,0.04) !important;
+  border-color: #e2e8f0 !important;
+}
+
+
+/* ────────────────────────────────────────────
+   18. WIZARD STEPS (new-analysis.html)
+   ──────────────────────────────────────────── */
+html:not(.dark) .wizard-connector.active {
+  background: linear-gradient(90deg, #4f46e5, rgba(79,70,229,0.3)) !important;
+}
+html:not(.dark) .wizard-connector.completed {
+  background: #4f46e5 !important;
+}
+html:not(.dark) .step-dot.active .step-num {
+  background: #4f46e5 !important;
+  color: #fff !important;
+  box-shadow: 0 0 12px rgba(79,70,229,0.3) !important;
+}
+html:not(.dark) .step-dot.completed .step-num {
+  background: #4f46e5 !important;
+  color: #fff !important;
+}
+html:not(.dark) .step-dot .step-num {
+  border-color: #d1d5db !important;
+  background: #ffffff !important;
+  color: #94a3b8 !important;
+}
+
+/* Wizard Footer */
+html:not(.dark) #wizard-footer {
+  background-color: rgba(255,255,255,0.95) !important;
+  border-top-color: #e2e8f0 !important;
+}
+
+
+/* ────────────────────────────────────────────
+   19. FILTER CHIPS
+   ──────────────────────────────────────────── */
+html:not(.dark) .filter-chip {
+  border-color: #d1d5db !important;
+  background: #ffffff !important;
+  color: #64748b !important;
+}
+html:not(.dark) .filter-chip.active {
+  border-color: #4f46e5 !important;
+  background: rgba(79,70,229,0.08) !important;
+  color: #4f46e5 !important;
+}
+html:not(.dark) .filter-chip:hover {
+  border-color: #94a3b8 !important;
+}
+
+
+/* ────────────────────────────────────────────
+   20. CHANNEL CARDS (new-analysis)
+   ──────────────────────────────────────────── */
+html:not(.dark) .channel-card > div {
+  border-color: #e2e8f0 !important;
+  background: #ffffff !important;
+}
+html:not(.dark) .channel-card input:checked ~ div {
+  background: rgba(79,70,229,0.05) !important;
+}
+
+
+/* ────────────────────────────────────────────
+   21. MOCKUP FRAMES
+   ──────────────────────────────────────────── */
+html:not(.dark) .mockup-frame {
+  border-color: #d1d5db !important;
+  background: #f8fafc !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08) !important;
+}
+
+
+/* ────────────────────────────────────────────
+   22. SCORE BARS
+   ──────────────────────────────────────────── */
+html:not(.dark) .score-bar-bg {
+  background: rgba(0,0,0,0.04) !important;
+}
+
+
+/* ────────────────────────────────────────────
+   23. ECO / TREND PANELS
+   ──────────────────────────────────────────── */
+html:not(.dark) #eco-env-panel {
+  border-color: rgba(234,179,8,0.2) !important;
+  background: rgba(254,252,232,0.6) !important;
+}
+html:not(.dark) #trend-radar-panel {
+  border-color: rgba(244,63,94,0.15) !important;
+  background: rgba(255,241,242,0.6) !important;
+}
+
+
+/* ────────────────────────────────────────────
+   24. OPTIMIZATION CONTAINER
+   ──────────────────────────────────────────── */
+html:not(.dark) #optimization-container {
+  border-color: rgba(168,85,247,0.25) !important;
+  background: rgba(250,245,255,0.5) !important;
+}
+
+
+/* ────────────────────────────────────────────
+   25. LANDING PAGE SPECIFICS
+   ──────────────────────────────────────────── */
+
+/* Hero section gradient orb */
+html:not(.dark) .animate-pulse[class*="bg-neon-violet/10"] {
+  opacity: 0.3 !important;
+}
+
+/* Spinning border circles */
+html:not(.dark) [class*="border-dashed"][class*="animate-"] {
+  border-color: rgba(99,102,241,0.15) !important;
+}
+
+/* Scan cards / Landing grid */
+html:not(.dark) .scan-card {
+  border-color: #e2e8f0 !important;
+}
+html:not(.dark) .scan-card:hover {
+  border-color: #6366f1 !important;
+}
+
+/* Landing section backgrounds */
+html:not(.dark) [class*="bg-cyber-dark"] {
+  background-color: #f1f5f9 !important;
+}
+
+/* CTA Section */
+html:not(.dark) .bg-cyber-black[class*="z-0"] {
+  background-color: #ffffff !important;
+}
+
+/* Data text overlays */
+html:not(.dark) .font-mono.text-neon-cyan[class*="text-\\[10px\\]"] {
+  color: #6366f1 !important;
+}
+
+
+/* ────────────────────────────────────────────
+   26. MISC
+   ──────────────────────────────────────────── */
+
+/* Gradient lines */
+html:not(.dark) [class*="bg-gradient-to-r"][class*="via-neon-cyan"] {
+  background-image: linear-gradient(to right, transparent, rgba(99,102,241,0.3), transparent) !important;
+}
+
+/* Animate pulse neon items */
+html:not(.dark) .animate-pulse[class*="text-neon"] {
+  animation: none !important;
+}
+
+/* Drop zone */
+html:not(.dark) #drop-zone {
+  border-color: #d1d5db !important;
+  background: #fafbfc !important;
+}
+html:not(.dark) #drop-zone:hover {
+  border-color: #6366f1 !important;
+  background: rgba(99,102,241,0.03) !important;
+}
+
+/* Various panels with bg-black/40 etc */
+html:not(.dark) .border[class*="bg-black"] {
+  background-color: #ffffff !important;
+}
+
+/* Campaign cards in dashboard grid */
+html:not(.dark) #campaigns-grid > div {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05) !important;
+}
+
+/* No campaigns message */
+html:not(.dark) #no-campaigns-msg {
+  background: rgba(0,0,0,0.02) !important;
+  border-color: #d1d5db !important;
+}
+
+/* Loading spinner text */
+html:not(.dark) .text-neon-magenta.animate-pulse {
+  color: #9333ea !important;
+}
+
+/* Neon border on the image container */
+html:not(.dark) .border-neon-cyan\/30 {
+  border-color: rgba(14,116,144,0.2) !important;
+}
+
+/* Red/warning borders stay as-is for visibility */
+
+/* Copy/feedback button colors */
+html:not(.dark) .bg-green-500 {
+  background-color: #22c55e !important;
+}
+
+/* Persona tags */
+html:not(.dark) .persona-tag {
+  border-color: #e2e8f0 !important;
+  color: #64748b !important;
+}
+html:not(.dark) .persona-tag.recommended {
+  border-color: #4f46e5 !important;
+  color: #4f46e5 !important;
+}
+
+/* Fix for inlined gradients on hero text */
+html:not(.dark) .bg-clip-text.bg-gradient-to-r.from-neon-cyan {
+  background-image: linear-gradient(to right, #0e7490, #475569, #9333ea) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+}
+
+/* Border-l accent lines */
+html:not(.dark) .border-l-2.border-neon-cyan { border-left-color: #4f46e5 !important; }
+html:not(.dark) .border-l-2.border-neon-violet { border-left-color: #7c3aed !important; }
+html:not(.dark) .border-l-2.border-neon-magenta { border-left-color: #a21caf !important; }
+
+/* Fix grayscale filter on landing images — keep as-is */
+
+/* Create segment icon options */
+html:not(.dark) .icon-option {
+  color: #94a3b8 !important;
+}
+html:not(.dark) .icon-option:hover {
+  background: rgba(0,0,0,0.04) !important;
+  color: #4f46e5 !important;
+}
+
+
+/* ────────────────────────────────────────────
+   27. LANDING PAGE — CTA / FOOTER SECTION
+   ──────────────────────────────────────────── */
+
+/* Full CTA section background */
+html:not(.dark) section[class*="bg-cyber"] {
+  background-color: #f1f5f9 !important;
+}
+
+/* Footer bottom bar */
+html:not(.dark) .border-t.border-white\/10 {
+  border-top-color: #e2e8f0 !important;
+}
+
+/* Landing page card gradients */
+html:not(.dark) [class*="from-neon-cyan/5"],
+html:not(.dark) [class*="from-neon-magenta/5"],
+html:not(.dark) [class*="from-neon-violet/5"] {
+  background: transparent !important;
+}
+
+/* Gradient divider lines */
+html:not(.dark) [class*="from-transparent"][class*="via-neon"] {
+  opacity: 0.4 !important;
+}
+
+/* Auth modal specific */
+html:not(.dark) #auth-modal {
+  background-color: rgba(15,23,42,0.4) !important;
+}
+html:not(.dark) #auth-modal-content {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 25px 50px rgba(0,0,0,0.12) !important;
+}
+html:not(.dark) #auth-modal-content .bg-black,
+html:not(.dark) #auth-modal-content input[class*="bg-black"] {
+  background-color: #f8fafc !important;
+}
+html:not(.dark) #auth-modal-content .border-gray-800 {
+  border-color: #d1d5db !important;
+}
+
+/* Campaign modal */
+html:not(.dark) #campaign-modal {
+  background-color: rgba(15,23,42,0.4) !important;
+}
+html:not(.dark) #modal-content {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+}
+
+/* Channel detail modal */
+html:not(.dark) #channel-detail-modal {
+  background-color: rgba(15,23,42,0.4) !important;
+}
+html:not(.dark) .channel-modal-inner {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+}
+
+/* Lock overlay in modals */
+html:not(.dark) .absolute.inset-0[class*="bg-black/80"] {
+  background-color: rgba(255,255,255,0.85) !important;
+}
+
+/* Auth form background tweaks */
+html:not(.dark) #auth-form .bg-white {
+  background-color: #4f46e5 !important;
+  color: #ffffff !important;
+}
+
+/* Tab active state in auth modal */
+html:not(.dark) #tab-login.border-neon-cyan {
+  border-bottom-color: #4f46e5 !important;
+  color: #4f46e5 !important;
+}
+html:not(.dark) [class*="bg-white/5"] {
+  background-color: rgba(79,70,229,0.04) !important;
+}
+
+/* Demo section in landing */
+html:not(.dark) #demo-section {
+  background-color: #f8fafc !important;
+}
+
+/* Scan pattern overlay */
+html:not(.dark) [class*="scan-line"],
+html:not(.dark) .animate-scan {
+  opacity: 0 !important;
+}
+
+/* Spinning animations in hero — soften */
+html:not(.dark) [class*="animate-\\[spin"] {
+  opacity: 0.3 !important;
+}
+
+/* Pulsing dots */
+html:not(.dark) .animate-pulse {
+  animation-duration: 3s !important;
+}
+
+
+/* ────────────────────────────────────────────
+   28. CHART.JS SUPPORT
+   ──────────────────────────────────────────── */
+/* Chart.js canvases don't need CSS overrides,
+   but container backgrounds should be light */
+html:not(.dark) canvas {
+  filter: none !important;
+}
+
+
+/* ────────────────────────────────────────────
+   29. PDF BUTTON / DOWNLOAD ACTIONS
+   ──────────────────────────────────────────── */
+html:not(.dark) #btn-download-pdf {
+  border-color: #9333ea !important;
+  color: #9333ea !important;
+}
+html:not(.dark) #btn-download-pdf:hover {
+  background-color: #9333ea !important;
+  color: #ffffff !important;
+}
+
+
+/* ────────────────────────────────────────────
+   30. FUNNEL BARS & DONUT CHART
+   ──────────────────────────────────────────── */
+html:not(.dark) #funnel-bars .bg-gradient-to-r {
+  opacity: 0.85 !important;
+}
+
+
+/* ────────────────────────────────────────────
+   31. MEDIA QUERIES — Mobile theme toggle
+   ──────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .theme-toggle-btn {
+    width: 32px;
+    height: 32px;
+  }
+  .theme-toggle-btn .material-symbols-outlined {
+    font-size: 18px !important;
+  }
+}

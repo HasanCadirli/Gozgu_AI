@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html class="dark" lang="tr">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <title>Yeni Analiz - Gözgü AI</title>
+  <script>if(localStorage.getItem('gozgu-theme')==='light')document.documentElement.classList.remove('dark');</script>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+  <link href="theme.css" rel="stylesheet"/>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "cyber-black": "#050505",
+            "cyber-dark": "#0a0a0f",
+            "neon-cyan": "#00f3ff",
+            "neon-magenta": "#ff00ff",
+            "neon-violet": "#bc13fe",
+            "grid-line": "rgba(0, 243, 255, 0.1)"
+          },
+          fontFamily: {
+            "cyber": ["Orbitron", "sans-serif"],
+            "tech": ["Rajdhani", "sans-serif"]
+          },
+          animation: {
+            'scan': 'scan 3s linear infinite',
+            'pulse-fast': 'pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+          },
+          keyframes: {
+            scan: {
+              '0%': { transform: 'translateY(-100%)' },
+              '100%': { transform: 'translateY(100%)' }
+            }
+          }
+        },
+      },
+    }
+  </script>
+  <style>
+    body { background-color: #050505; }
+    .bg-grid {
+      background-image: linear-gradient(to right, rgba(0, 243, 255, 0.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(0, 243, 255, 0.05) 1px, transparent 1px);
+      background-size: 30px 30px;
+    }
+    .hud-border {
+      position: relative;
+      border: 1px solid rgba(0, 243, 255, 0.2);
+      background: rgba(10, 10, 15, 0.8);
+      backdrop-filter: blur(10px);
+    }
+    .hud-border::before {
+      content: ''; position: absolute; top: -1px; left: -1px; width: 10px; height: 10px;
+      border-top: 2px solid #00f3ff; border-left: 2px solid #00f3ff;
+    }
+    .hud-border::after {
+      content: ''; position: absolute; bottom: -1px; right: -1px; width: 10px; height: 10px;
+      border-bottom: 2px solid #00f3ff; border-right: 2px solid #00f3ff;
+    }
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: rgba(0, 243, 255, 0.05); }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0, 243, 255, 0.3); border-radius: 4px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(0, 243, 255, 0.7); }
+
+    /* Wizard Step Transitions */
+    .wizard-step {
+      animation: stepFadeIn 0.35s ease-out;
+    }
+    @keyframes stepFadeIn {
+      from { opacity: 0; transform: translateX(20px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    /* Progress Connector */
+    .wizard-connector {
+      flex: 1;
+      height: 2px;
+      background: rgba(255,255,255,0.1);
+      position: relative;
+      max-width: 120px;
+    }
+    .wizard-connector.active {
+      background: linear-gradient(90deg, #00f3ff, rgba(0,243,255,0.3));
+    }
+    .wizard-connector.completed {
+      background: #00f3ff;
+    }
+
+    /* Step Dot */
+    .step-dot {
+      transition: all 0.3s ease;
+    }
+    .step-dot.active .step-num {
+      background: #00f3ff;
+      color: #000;
+      box-shadow: 0 0 15px rgba(0,243,255,0.4);
+    }
+    .step-dot.completed .step-num {
+      background: #00f3ff;
+      color: #000;
+    }
+
+    /* Filter Chips */
+    .filter-chip {
+      transition: all 0.2s ease;
+    }
+    .filter-chip.active {
+      border-color: #00f3ff !important;
+      background: rgba(0,243,255,0.15) !important;
+      color: #00f3ff !important;
+    }
+
+    /* Persona card selection styling */
+    .persona-checkbox-label { transition: all 0.2s; }
+    input[type="checkbox"]:checked + .persona-checkbox-label {
+      border-color: #00f3ff;
+      background-color: rgba(0, 243, 255, 0.1);
+    }
+    input[type="checkbox"]:checked + .persona-checkbox-label .check-icon {
+      opacity: 1; color: #00f3ff;
+    }
+    input[type="checkbox"]:checked + .persona-checkbox-label .persona-name {
+      color: #00f3ff;
+    }
+    .check-icon { opacity: 0; transition: opacity 0.2s; }
+  </style>
+</head>
+<body class="bg-cyber-black text-white font-tech min-h-screen relative overflow-x-hidden pt-20">
+  
+  <div class="fixed inset-0 bg-grid z-0 pointer-events-none opacity-40"></div>
+
+  <header class="fixed top-0 w-full z-50 border-b border-neon-cyan/30 bg-cyber-black/90 backdrop-blur-md h-16 flex items-center px-4 md:px-10 justify-between">
+    <div class="flex items-center gap-6">
+      <a href="index.html" class="flex items-center gap-3 select-none group hover:opacity-80 transition-opacity">
+        <span class="material-symbols-outlined text-neon-cyan" style="font-size: 28px;">hub</span>
+        <h2 class="text-white text-lg font-cyber font-bold tracking-widest uppercase">GOZGU.AI <span class="text-xs text-gray-500">// ANALİZ</span></h2>
+      </a>
+    </div>
+    <div class="flex items-center gap-4">
+      <button class="theme-toggle-btn" title="Tema Değiştir">
+        <span class="material-symbols-outlined" style="font-size:20px">light_mode</span>
+      </button>
+      <a href="dashboard.html" class="flex items-center gap-2 text-gray-400 hover:text-neon-cyan font-mono text-xs transition-colors">
+        <span class="material-symbols-outlined text-[16px]">arrow_back</span> PANELE DÖN
+      </a>
+      <div class="font-mono text-[10px] text-neon-magenta blink animate-pulse hidden md:block">CANLI_BAGLANTI</div>
+    </div>
+  </header>
+
+  <main class="relative z-10 w-full max-w-[1100px] mx-auto px-4 pb-28 pt-8 mt-6">
+
+    <!-- Page Header -->
+    <div class="mb-6 border-b border-neon-cyan/20 pb-6 flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div class="flex items-center gap-5">
+            <div class="w-16 h-16 border border-neon-cyan bg-neon-cyan/10 flex items-center justify-center text-neon-cyan shadow-[0_0_15px_rgba(0,243,255,0.2)]">
+                <span class="material-symbols-outlined text-4xl">travel_explore</span>
+            </div>
+            <div class="flex flex-col">
+                <span class="font-mono text-xs text-neon-cyan/70 tracking-widest uppercase mb-1">// KAMPANYA_ANALİZİ</span>
+                <h1 class="text-3xl font-cyber font-bold text-white uppercase tracking-widest leading-none">YENİ <span class="text-neon-cyan">KAMPANYA</span> OLUŞTUR</h1>
+                <p class="text-sm text-gray-400 font-mono mt-2">Kreatif vizyonunuzu yapay zeka personaları ile test edin ve optimize edin.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════ -->
+    <!-- WIZARD PROGRESS BAR                             -->
+    <!-- ═══════════════════════════════════════════════ -->
+    <div id="wizard-progress" class="flex items-center justify-center gap-0 mb-8 px-4">
+      <div class="step-dot active flex flex-col items-center gap-1.5" data-step="1">
+        <div class="step-num w-8 h-8 rounded-full border border-gray-600 bg-black/60 flex items-center justify-center font-cyber text-xs text-gray-500 transition-all">1</div>
+        <span class="text-[9px] font-mono text-gray-500 uppercase tracking-wider hidden sm:block">Kampanya</span>
+      </div>
+      <div class="wizard-connector active" id="connector-1"></div>
+      <div class="step-dot flex flex-col items-center gap-1.5" data-step="2">
+        <div class="step-num w-8 h-8 rounded-full border border-gray-600 bg-black/60 flex items-center justify-center font-cyber text-xs text-gray-500 transition-all">2</div>
+        <span class="text-[9px] font-mono text-gray-500 uppercase tracking-wider hidden sm:block">Medya</span>
+      </div>
+      <div class="wizard-connector" id="connector-2"></div>
+      <div class="step-dot flex flex-col items-center gap-1.5" data-step="3">
+        <div class="step-num w-8 h-8 rounded-full border border-gray-600 bg-black/60 flex items-center justify-center font-cyber text-xs text-gray-500 transition-all">3</div>
+        <span class="text-[9px] font-mono text-gray-500 uppercase tracking-wider hidden sm:block">Hedef Kitle</span>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════ -->
+    <!-- FORM (Tek form — tüm adımları sarar)            -->
+    <!-- ═══════════════════════════════════════════════ -->
+    <form id="campaign-form" class="relative">
+
+      <!-- ═══════════════════════════════════════════ -->
+      <!-- ADIM 1: KAMPANYA BİLGİLERİ                  -->
+      <!-- ═══════════════════════════════════════════ -->
+      <div id="step-1" class="wizard-step">
+        <div class="max-w-3xl mx-auto space-y-6">
+
+          <!-- Optimizasyon Uyarı Banner -->
+          <div id="optimization-banner" class="hidden border border-neon-cyan/50 bg-neon-cyan/10 p-4 relative flex items-center justify-between">
+              <div class="absolute left-0 top-0 h-full w-1 bg-neon-cyan"></div>
+              <div class="flex items-center gap-3">
+                  <span class="material-symbols-outlined text-neon-cyan pb-1">auto_awesome</span>
+                  <div>
+                      <span class="text-neon-cyan font-mono text-[11px] uppercase tracking-wider block">AI OPTİMİZE EDİLMİŞ KAMPANYA MODU</span>
+                      <span class="text-gray-300 font-tech text-[12px] leading-tight">Bu form, önceki kampanyanızın optimize verileriyle doldurulmuştur.<br>Eğer tamamen <span class="text-white font-bold">farklı, yeni bir analiz</span> başlatmak istiyorsanız bağlantıyı koparın.</span>
+                  </div>
+              </div>
+              <button type="button" id="btn-cancel-optimization" class="px-3 py-1.5 border border-red-500/50 bg-red-900/20 hover:bg-red-500/20 text-red-400 font-mono text-[10px] uppercase transition-colors shrink-0">
+                  BUNU SIFIRLA
+              </button>
+          </div>
+
+          <!-- 01. Kampanya Parametreleri -->
+          <div class="border border-white/5 bg-black/40 p-6 relative group hover:border-white/20 transition-colors">
+              <div class="absolute top-0 left-0 w-2 h-full bg-gray-800 group-hover:bg-neon-cyan/40 transition-colors"></div>
+              <h3 class="text-xs font-mono text-gray-400 mb-5 uppercase tracking-widest pl-4 flex items-center gap-2">
+                <span class="material-symbols-outlined text-sm text-neon-cyan">edit_note</span>
+                // 01. KAMPANYA_PARAMETRELERİ
+              </h3>
+              
+              <div class="space-y-5 pl-4">
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                      <div class="flex flex-col gap-1.5 text-left">
+                          <label class="font-mono text-[10px] text-neon-cyan tracking-wider">KAMPANYA ADI <span class="text-red-400">*</span></label>
+                          <input type="text" id="c_name" required class="bg-black/60 border border-gray-700 focus:border-neon-cyan text-white text-sm p-3 font-tech outline-none transition-colors w-full placeholder-gray-600" placeholder="Örn: EcoBreeze Lansman" />
+                      </div>
+                      <div class="flex flex-col gap-1.5 text-left">
+                          <label class="font-mono text-[10px] text-neon-magenta tracking-wider">TEMEL HEDEF <span class="text-red-400">*</span></label>
+                          <select id="c_objective" required class="bg-black/60 border border-gray-700 focus:border-neon-magenta text-white text-sm p-3 font-tech outline-none transition-colors w-full cursor-pointer appearance-none">
+                              <option value="Satış / Dönüşüm (Conversion)">Satış / Dönüşüm (Conversion)</option>
+                              <option value="Lead / Form Toplama (Lead Gen)">Lead / Form Toplama (Lead Gen)</option>
+                              <option value="Trafik / Tıklama (Traffic)">Trafik / Tıklama (Traffic)</option>
+                              <option value="Marka Bilinirliği (Awareness)">Marka Bilinirliği (Awareness)</option>
+                              <option value="Etkileşim (Engagement)">Etkileşim (Engagement)</option>
+                              <option value="Uygulama İndirme (App Install)">Uygulama İndirme (App Install)</option>
+                          </select>
+                      </div>
+                      <div class="flex flex-col gap-1.5 text-left">
+                          <label class="font-mono text-[10px] text-neon-cyan tracking-wider">MARKA SES TONU</label>
+                          <select id="c_brand_tone" class="bg-black/60 border border-gray-700 focus:border-neon-cyan text-white text-sm p-3 font-tech outline-none transition-colors w-full cursor-pointer appearance-none">
+                              <option value="">Belirtilmemiş</option>
+                              <option value="Profesyonel & Kurumsal">Profesyonel & Kurumsal</option>
+                              <option value="Neşeli & Eğlenceli">Neşeli & Eğlenceli</option>
+                              <option value="Ciddi & Güven Verici">Ciddi & Güven Verici</option>
+                              <option value="Genç & Dinamik">Genç & Dinamik</option>
+                              <option value="Samimi & İçten">Samimi & İçten</option>
+                              <option value="Lüks & Seçkin">Lüks & Seçkin (Premium)</option>
+                          </select>
+                      </div>
+                      <div class="flex flex-col gap-1.5 text-left">
+                          <label class="font-mono text-[10px] text-neon-cyan tracking-wider">KULLANICI EYLEM ÇAĞRISI (CTA)</label>
+                          <select id="c_call_to_action" class="bg-black/60 border border-gray-700 focus:border-neon-cyan text-white text-sm p-3 font-tech outline-none transition-colors w-full cursor-pointer appearance-none">
+                              <option value="">Belirtilmemiş</option>
+                              <option value="Hemen Satın Al">Hemen Satın Al</option>
+                              <option value="Ücretsiz Kayıt Ol">Ücretsiz Kayıt Ol</option>
+                              <option value="Daha Fazla Bilgi">Daha Fazla Bilgi</option>
+                              <option value="Fiyat Teklifi Al">Fiyat Teklifi Al</option>
+                              <option value="Uygulamayı İndir">Uygulamayı İndir</option>
+                              <option value="Bize Ulaşın">Bize Ulaşın</option>
+                          </select>
+                      </div>
+                  </div>
+
+                  <div class="flex flex-col gap-1.5 text-left">
+                      <label class="font-mono text-[10px] text-neon-magenta tracking-wider">ÖNE ÇIKAN DEĞER TEKLİFİ (Opsiyonel)</label>
+                      <input type="text" id="c_value_proposition" class="bg-black/60 border border-gray-700 focus:border-neon-magenta text-white text-sm p-3 font-tech outline-none transition-colors w-full placeholder-gray-600" placeholder="Kullanıcı bu reklama neden tıklasın? (Örn: Ücretsiz Kargo, %50 İndirim)" />
+                  </div>
+
+                  <div class="flex flex-col gap-1.5 text-left">
+                      <label class="font-mono text-[10px] text-neon-cyan tracking-wider">REKLAM SLOGANI / BAŞLIK (Opsiyonel)</label>
+                      <input type="text" id="c_slogan" class="bg-black/60 border border-gray-700 focus:border-neon-cyan text-white text-sm p-3 font-tech outline-none transition-colors w-full placeholder-gray-600" placeholder="Görseldeki veya kampanyadaki ana slogan/başlık" />
+                  </div>
+                  
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mt-4">
+                      <div class="flex flex-col gap-1.5 text-left">
+                          <label class="font-mono text-[10px] text-gray-400 tracking-wider">HEDEF KİTLE NOTLARI (OPSİYONEL)</label>
+                          <textarea id="c_audience" rows="3" class="bg-black/60 border border-gray-700 focus:border-white text-white text-sm p-3 font-tech outline-none transition-colors w-full placeholder-gray-600 resize-none" placeholder="Genel olarak kimleri hedeflediğinize dair daha spesifik notlar..."></textarea>
+                      </div>
+                      <div class="flex flex-col gap-1.5 text-left">
+                          <label class="font-mono text-[10px] text-red-400 tracking-wider">MARKA KISITLAMALARI (OPSİYONEL)</label>
+                          <textarea id="c_brand_guidelines" rows="3" class="bg-black/60 border border-gray-700 focus:border-red-400/50 text-white text-sm p-3 font-tech outline-none transition-colors w-full placeholder-gray-600 resize-none" placeholder="'Rakip adı geçmeyecek', 'Aşırı ciddi olmayacak' gibi kesin kurallar..."></textarea>
+                      </div>
+                  </div>
+              </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════════════════════ -->
+      <!-- ADIM 2: MEDYA & KANALLAR                    -->
+      <!-- ═══════════════════════════════════════════ -->
+      <div id="step-2" class="wizard-step hidden">
+        <div class="max-w-3xl mx-auto space-y-6">
+
+          <!-- Medya Yüklemesi -->
+          <div class="border border-white/5 bg-black/40 p-6 relative group hover:border-white/20 transition-colors">
+              <div class="absolute top-0 left-0 w-2 h-full bg-gray-800 group-hover:bg-neon-magenta/40 transition-colors"></div>
+              <h3 class="text-xs font-mono text-gray-400 mb-5 uppercase tracking-widest pl-4 flex items-center gap-2">
+                <span class="material-symbols-outlined text-sm text-neon-magenta">upload_file</span>
+                // 02. MEDYA_YÜKLEMESİ
+              </h3>
+              
+              <div class="space-y-5 pl-4">
+                  <div class="flex flex-col gap-1.5 text-left">
+                      <label class="font-mono text-[10px] text-neon-magenta tracking-wider">REKLAM GÖRSELİ / VİDEOSU <span class="text-red-400">*</span></label>
+                      <div id="drop-zone" class="border-2 border-dashed border-gray-700 bg-black/40 p-8 flex flex-col items-center justify-center gap-3 cursor-pointer hover:border-neon-cyan hover:bg-neon-cyan/5 transition-all relative overflow-hidden group">
+                          <input type="file" id="c_file" accept="image/*,video/mp4,video/webm,video/quicktime" class="hidden" />
+                          <span class="material-symbols-outlined text-4xl text-gray-500 group-hover:text-neon-cyan transition-colors">upload_file</span>
+                          <div class="text-center">
+                              <p class="text-sm text-gray-300 font-tech">Görseli buraya sürükleyin veya <span class="text-neon-cyan underline">tıklayın</span></p>
+                              <p class="text-[10px] text-gray-500 font-mono mt-1 uppercase">Görsel: max 5MB (PNG, JPG, WEBP) | Video: max 10MB, 30sn, 720p (MP4, WebM, MOV)</p>
+                          </div>
+                      </div>
+                      <!-- Gizli Canvas (Sıkıştırma İçin) -->
+                      <canvas id="compression-canvas" class="hidden"></canvas>
+                      <input type="hidden" id="c_media_url" />
+                  </div>
+
+                  <!-- Görsel Önizleme ve Sıkıştırma Durumu -->
+                  <div id="upload-preview-container" class="hidden border border-neon-cyan/20 bg-black/60 p-4 relative overflow-hidden">
+                      <div class="absolute inset-0 bg-neon-cyan/5 pointer-events-none animate-pulse"></div>
+                      <div class="flex items-center justify-between mb-4 border-b border-white/10 pb-2">
+                          <div class="flex items-center gap-3">
+                              <span class="material-symbols-outlined text-neon-cyan text-[18px]">visibility</span>
+                              <span class="font-mono text-[10px] text-neon-cyan uppercase tracking-wider">Yükleme Önizlemesi</span>
+                          </div>
+                          <button type="button" id="btn-remove-file" class="text-red-500 hover:text-red-400 font-mono text-[10px] uppercase flex items-center gap-1">
+                              <span class="material-symbols-outlined text-[14px]">cancel</span> Kaldır
+                          </button>
+                      </div>
+                      <div class="flex flex-col md:flex-row gap-4">
+                          <div id="preview-frame" class="w-full md:w-32 aspect-square border border-white/10 overflow-hidden flex items-center justify-center bg-gray-900/50">
+                              <img id="img-preview" src="" class="max-w-full max-h-full object-contain" />
+                              <video id="video-preview" class="hidden max-w-full max-h-full object-contain" controls muted playsinline></video>
+                          </div>
+                          <div class="flex-1 space-y-2">
+                              <div class="flex justify-between items-end">
+                                  <span id="file-name" class="text-xs text-white font-mono truncate max-w-[200px]">resim.jpg</span>
+                                  <span id="compression-status" class="text-[9px] font-mono text-neon-cyan uppercase tracking-tighter">İşleniyor...</span>
+                              </div>
+                              <div class="w-full h-1 bg-gray-800 rounded-full overflow-hidden">
+                                  <div id="upload-progress-bar" class="w-0 h-full bg-neon-cyan transition-all duration-300"></div>
+                              </div>
+                              <p id="file-info" class="text-[9px] text-gray-500 font-mono uppercase">Orijinal: 0 MB // Sıkıştırılmış: 0 MB</p>
+                              <div id="video-info-panel" class="hidden mt-2 space-y-1">
+                                  <div class="flex items-center gap-4">
+                                      <span id="video-duration" class="text-[9px] font-mono text-gray-500">Süre: --</span>
+                                      <span id="video-resolution" class="text-[9px] font-mono text-gray-500">Çözünürlük: --</span>
+                                  </div>
+                                  <div id="video-warning" class="hidden p-2 bg-red-900/30 border border-red-500/30 rounded text-[9px] text-red-400 font-mono">
+                                      ⚠️ Video limitleri aşıyor.
+                                  </div>
+                              </div>
+                          </div>
+                      </div>
+                  </div>
+              </div>
+          </div>
+
+          <!-- Yayın Kanalları -->
+          <div class="border border-white/5 bg-black/40 p-6 relative group hover:border-white/20 transition-colors">
+              <div class="absolute top-0 left-0 w-2 h-full bg-gray-800 group-hover:bg-neon-violet/40 transition-colors"></div>
+              
+              <div class="flex justify-between items-center mb-5 pl-4">
+                  <h3 class="text-xs font-mono text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                    <span class="material-symbols-outlined text-sm text-neon-violet">cell_tower</span>
+                    // 03. YAYIN_KANALLARI
+                  </h3>
+                  <span class="text-[10px] font-mono text-neon-violet px-3 py-1 border border-neon-violet/30 bg-neon-violet/10 font-bold tracking-wider" id="channel-count-badge">0 SEÇİLDİ</span>
+              </div>
+              
+              <div class="pl-4">
+                  <p class="text-[11px] text-gray-500 font-tech mb-4">Reklamınızın hangi yayın formatlarına göre analiz edilmesini istiyorsunuz?</p>
+                  
+                  <div class="grid grid-cols-2 md:grid-cols-5 gap-3" id="channel-selector-grid">
+                      <label class="channel-card cursor-pointer block relative" data-channel="DISPLAY">
+                          <input type="checkbox" name="channels" value="DISPLAY" class="peer hidden channel-checkbox">
+                          <div class="border border-gray-700 peer-checked:border-neon-cyan bg-black/60 peer-checked:bg-neon-cyan/10 p-4 text-center transition-all h-full flex flex-col items-center justify-center gap-2 relative overflow-hidden hover:border-gray-500">
+                              <div class="absolute top-0 left-0 w-full h-[2px] bg-neon-cyan scale-x-0 peer-checked:scale-x-100 transition-transform origin-left"></div>
+                              <span class="material-symbols-outlined text-gray-500 peer-checked:text-neon-cyan text-2xl">monitor</span>
+                              <p class="font-mono text-[10px] text-gray-500 peer-checked:text-neon-cyan uppercase font-bold tracking-wider">GÖRÜNTÜLÜ</p>
+                          </div>
+                      </label>
+                      <label class="channel-card cursor-pointer block relative" data-channel="STORIES">
+                          <input type="checkbox" name="channels" value="STORIES" class="peer hidden channel-checkbox">
+                          <div class="border border-gray-700 peer-checked:border-neon-magenta bg-black/60 peer-checked:bg-neon-magenta/10 p-4 text-center transition-all h-full flex flex-col items-center justify-center gap-2 relative overflow-hidden hover:border-gray-500">
+                              <div class="absolute top-0 left-0 w-full h-[2px] bg-neon-magenta scale-x-0 peer-checked:scale-x-100 transition-transform origin-left"></div>
+                              <span class="material-symbols-outlined text-gray-500 peer-checked:text-neon-magenta text-2xl">smartphone</span>
+                              <p class="font-mono text-[10px] text-gray-500 peer-checked:text-neon-magenta uppercase font-bold tracking-wider">HİKAYELER</p>
+                          </div>
+                      </label>
+                      <label class="channel-card cursor-pointer block relative" data-channel="FEEDS">
+                          <input type="checkbox" name="channels" value="FEEDS" class="peer hidden channel-checkbox">
+                          <div class="border border-gray-700 peer-checked:border-neon-violet bg-black/60 peer-checked:bg-neon-violet/10 p-4 text-center transition-all h-full flex flex-col items-center justify-center gap-2 relative overflow-hidden hover:border-gray-500">
+                              <div class="absolute top-0 left-0 w-full h-[2px] bg-neon-violet scale-x-0 peer-checked:scale-x-100 transition-transform origin-left"></div>
+                              <span class="material-symbols-outlined text-gray-500 peer-checked:text-neon-violet text-2xl">grid_view</span>
+                              <p class="font-mono text-[10px] text-gray-500 peer-checked:text-neon-violet uppercase font-bold tracking-wider">AKIŞLAR</p>
+                          </div>
+                      </label>
+                      <label class="channel-card cursor-pointer block relative" data-channel="EMAIL">
+                          <input type="checkbox" name="channels" value="EMAIL" class="peer hidden channel-checkbox">
+                          <div class="border border-gray-700 peer-checked:border-white bg-black/60 peer-checked:bg-white/10 p-4 text-center transition-all h-full flex flex-col items-center justify-center gap-2 relative overflow-hidden hover:border-gray-500">
+                              <div class="absolute top-0 left-0 w-full h-[2px] bg-white scale-x-0 peer-checked:scale-x-100 transition-transform origin-left"></div>
+                              <span class="material-symbols-outlined text-gray-500 peer-checked:text-white text-2xl">mail</span>
+                              <p class="font-mono text-[10px] text-gray-500 peer-checked:text-white uppercase font-bold tracking-wider">E-POSTA</p>
+                          </div>
+                      </label>
+                      <label class="channel-card cursor-pointer block relative" data-channel="WEB_UI">
+                          <input type="checkbox" name="channels" value="WEB_UI" class="peer hidden channel-checkbox">
+                          <div class="border border-gray-700 peer-checked:border-neon-cyan bg-black/60 peer-checked:bg-neon-cyan/10 p-4 text-center transition-all h-full flex flex-col items-center justify-center gap-2 relative overflow-hidden hover:border-gray-500">
+                              <div class="absolute top-0 left-0 w-full h-[2px] bg-neon-cyan scale-x-0 peer-checked:scale-x-100 transition-transform origin-left"></div>
+                              <span class="material-symbols-outlined text-gray-500 peer-checked:text-neon-cyan text-2xl">language</span>
+                              <p class="font-mono text-[10px] text-gray-500 peer-checked:text-neon-cyan uppercase font-bold tracking-wider">WEB</p>
+                          </div>
+                      </label>
+                  </div>
+
+                  <!-- Multi-channel warning -->
+                  <div id="multi-channel-warning" class="hidden border border-amber-500/30 bg-amber-900/20 p-4 mt-4 relative overflow-hidden">
+                      <div class="absolute left-0 top-0 h-full w-1 bg-amber-500"></div>
+                      <div class="flex items-start gap-3">
+                          <span class="material-symbols-outlined text-amber-500 text-[18px] shrink-0 mt-0.5">warning</span>
+                          <p class="text-amber-200/90 font-tech text-[12px] leading-relaxed">
+                              <strong class="text-amber-400 font-mono tracking-wider mr-1">DİKKAT:</strong> 
+                              Birden fazla kanal seçildi. Her kanalın farklı format, dikkat süresi ve kullanıcı davranışı vardır. 
+                              Tek kanalda odaklanmak daha tutarlı ve iyileştirilebilir analiz sonuçları üretir. 
+                              Devam etmek serbest, ancak yorumları kanal dinamikleri göz önünde bulundurularak değerlendirin.
+                          </p>
+                      </div>
+                  </div>
+
+                  <!-- Tek kanal dikkat penceresi -->
+                  <div id="channel-attention-info" class="hidden mt-3 border border-neon-cyan/20 bg-black/40 p-3">
+                    <div class="flex items-center gap-2 mb-2 border-b border-white/5 pb-1">
+                      <span class="material-symbols-outlined text-neon-cyan text-[14px]">timer</span>
+                      <span class="font-mono text-[9px] text-gray-400 uppercase tracking-widest">
+                        Ortalama Dikkat Penceresi
+                      </span>
+                    </div>
+                    <div class="flex items-center gap-4">
+                      <span id="channel-attention-duration" class="text-xl font-cyber text-neon-cyan drop-shadow-[0_0_10px_rgba(0,243,255,0.4)]">--</span>
+                      <span id="channel-attention-note" class="text-[10px] text-gray-400 font-tech leading-relaxed border-l border-white/10 pl-3">--</span>
+                    </div>
+                  </div>
+              </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════════════════════ -->
+      <!-- ADIM 3: HEDEF KİTLE                         -->
+      <!-- ═══════════════════════════════════════════ -->
+      <div id="step-3" class="wizard-step hidden">
+
+        <!-- Arama & Filtre Bar -->
+        <div class="mb-6 space-y-4">
+          <!-- Arama Çubuğu -->
+          <div class="relative">
+            <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-600 text-lg">search</span>
+            <input type="text" id="persona-search" placeholder="Persona ara: isim, meslek, arketip..." 
+                   class="w-full bg-black/60 border border-gray-700 focus:border-neon-cyan text-white text-sm py-3 pl-10 pr-4 font-tech outline-none transition-colors placeholder-gray-600" />
+          </div>
+
+          <!-- Quick Filter Chips -->
+          <div class="flex flex-wrap gap-2 items-center">
+            <span class="text-[9px] font-mono text-gray-600 uppercase mr-1">SES:</span>
+            <button type="button" class="filter-chip px-2.5 py-1 border border-gray-700 bg-black/40 text-[10px] font-mono text-gray-500 uppercase hover:border-gray-500 transition-all" data-filter-type="ses" data-filter-value="AB">AB</button>
+            <button type="button" class="filter-chip px-2.5 py-1 border border-gray-700 bg-black/40 text-[10px] font-mono text-gray-500 uppercase hover:border-gray-500 transition-all" data-filter-type="ses" data-filter-value="C1">C1</button>
+            <button type="button" class="filter-chip px-2.5 py-1 border border-gray-700 bg-black/40 text-[10px] font-mono text-gray-500 uppercase hover:border-gray-500 transition-all" data-filter-type="ses" data-filter-value="C2_DE">C2_DE</button>
+            <span class="w-px h-4 bg-white/10 mx-1"></span>
+            <span class="text-[9px] font-mono text-gray-600 uppercase mr-1">Kuşak:</span>
+            <button type="button" class="filter-chip px-2.5 py-1 border border-gray-700 bg-black/40 text-[10px] font-mono text-gray-500 uppercase hover:border-gray-500 transition-all" data-filter-type="gen" data-filter-value="Gen-Z">Gen-Z</button>
+            <button type="button" class="filter-chip px-2.5 py-1 border border-gray-700 bg-black/40 text-[10px] font-mono text-gray-500 uppercase hover:border-gray-500 transition-all" data-filter-type="gen" data-filter-value="Millennial">Y Kuşağı</button>
+            <button type="button" class="filter-chip px-2.5 py-1 border border-gray-700 bg-black/40 text-[10px] font-mono text-gray-500 uppercase hover:border-gray-500 transition-all" data-filter-type="gen" data-filter-value="Gen-X">X Kuşağı</button>
+            <button type="button" class="filter-chip px-2.5 py-1 border border-gray-700 bg-black/40 text-[10px] font-mono text-gray-500 uppercase hover:border-gray-500 transition-all" data-filter-type="gen" data-filter-value="Boomer+">Boomer+</button>
+          </div>
+
+          <!-- Aksiyon Satırı -->
+          <div class="flex items-center justify-between">
+            <div class="flex gap-2">
+              <button type="button" id="btn-select-all" class="px-3 py-1.5 border border-green-500/30 bg-green-900/10 text-green-400 font-mono text-[10px] uppercase hover:bg-green-500/20 transition-colors flex items-center gap-1">
+                <span class="material-symbols-outlined text-[14px]">check_box</span> Görünenleri Seç
+              </button>
+              <button type="button" id="btn-deselect-all" class="px-3 py-1.5 border border-red-500/30 bg-red-900/10 text-red-400 font-mono text-[10px] uppercase hover:bg-red-500/20 transition-colors flex items-center gap-1">
+                <span class="material-symbols-outlined text-[14px]">indeterminate_check_box</span> Temizle
+              </button>
+            </div>
+            <span class="text-[10px] font-mono text-neon-cyan px-2 py-1 bg-neon-cyan/10 border border-neon-cyan/20" id="selected-persona-count">0 SEÇİLDİ</span>
+          </div>
+        </div>
+
+        <!-- İki Kolon: Segmentler + Personalar -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+          <!-- Segment Seçimi (Sol) -->
+          <div class="lg:col-span-4">
+            <div class="hud-border bg-black/60">
+              <div class="p-4 border-b border-white/5 bg-black/40">
+                <div class="flex justify-between items-center">
+                  <h4 class="text-[11px] font-mono text-neon-cyan uppercase tracking-wider flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-sm">folder_open</span> Segmentler
+                  </h4>
+                  <a href="create-segment.html" class="text-[9px] font-mono text-white/70 hover:text-neon-cyan hover:bg-neon-cyan/10 uppercase flex items-center gap-1 border border-white/20 hover:border-neon-cyan px-2 py-1 transition-all">
+                    <span class="material-symbols-outlined text-[12px]">add</span> YENİ
+                  </a>
+                </div>
+                <p class="text-[9px] font-tech text-gray-600 mt-1">Önceden oluşturulmuş persona gruplarını hızlıca seçin.</p>
+              </div>
+              <div id="segment-selection-grid" class="p-4 grid grid-cols-1 gap-2 max-h-[500px] overflow-y-auto custom-scrollbar">
+                  <div class="text-gray-500 font-mono text-[10px] py-4 text-center w-full flex items-center justify-center gap-2 border border-dashed border-gray-800">
+                    <span class="material-symbols-outlined animate-spin text-sm">refresh</span> Sistem taranıyor...
+                  </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Persona Seçimi (Sağ) -->
+          <div class="lg:col-span-8">
+            <div class="hud-border bg-black/60">
+              <div class="p-4 border-b border-white/5 bg-black/40">
+                <h4 class="text-[11px] font-mono text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <span class="material-symbols-outlined text-sm text-neon-cyan">radar</span> Persona Ağı
+                </h4>
+                <p class="text-[9px] font-tech text-gray-600 mt-1">Personaları tek tek inceleyip ağa dahil edin.</p>
+              </div>
+              <div id="persona-selection-grid" class="p-4 grid grid-cols-1 md:grid-cols-2 gap-2 max-h-[500px] overflow-y-auto custom-scrollbar">
+                  <div class="text-gray-500 font-mono text-xs py-10 text-center w-full col-span-2 flex items-center justify-center gap-2 border border-dashed border-gray-800">
+                    <span class="material-symbols-outlined animate-spin text-sm">refresh</span> Düğümlere bağlanılıyor...
+                  </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Seçim Özeti (Submit öncesi feedback) -->
+        <div id="selection-summary" class="hidden mt-6 border border-neon-cyan/20 bg-neon-cyan/5 p-4 flex flex-wrap items-center gap-4 text-[10px] font-mono">
+          <span class="material-symbols-outlined text-neon-cyan text-lg">fact_check</span>
+          <span id="summary-personas" class="text-gray-400">0 persona seçildi</span>
+          <span class="w-px h-4 bg-white/10"></span>
+          <span id="summary-channels" class="text-gray-400">0 kanal seçildi</span>
+          <span class="w-px h-4 bg-white/10"></span>
+          <span id="summary-media" class="text-gray-400">Medya yüklenmedi</span>
+        </div>
+
+        <p id="persona-error" class="text-xs font-mono text-red-500 bg-red-500/10 border border-red-500/20 p-2 hidden mt-4"><span class="material-symbols-outlined text-[14px] align-middle mr-1">error</span> En az bir hedef kitle (persona) seçmelisiniz.</p>
+      </div>
+
+      <!-- Yükleniyor Göstergesi -->
+      <div id="loading-indicator" class="hidden flex-col items-center justify-center gap-3 py-6 bg-black/60 border border-neon-magenta/30 shadow-[0_0_20px_rgba(255,0,255,0.1)] mt-6">
+          <span class="material-symbols-outlined animate-spin text-neon-magenta text-3xl">data_usage</span>
+          <span class="font-mono text-xs text-neon-magenta tracking-widest uppercase animate-pulse">VERİLER_İŞLENİYOR_LÜTFEN_BEKLEYİN...</span>
+      </div>
+
+      <!-- ═══════════════════════════════════════════ -->
+      <!-- STICKY WIZARD FOOTER                        -->
+      <!-- ═══════════════════════════════════════════ -->
+      <div id="wizard-footer" class="fixed bottom-0 left-0 w-full z-40 border-t border-neon-cyan/20 bg-cyber-black/95 backdrop-blur-md">
+        <div class="max-w-[1100px] mx-auto px-4 py-3 flex justify-between items-center">
+          <div class="flex items-center gap-3">
+            <span id="step-indicator" class="text-[10px] font-mono text-gray-500 uppercase">Adım 1 / 3</span>
+            <span id="step-title" class="text-xs font-cyber text-neon-cyan uppercase tracking-wider hidden md:block">Kampanya Bilgileri</span>
+          </div>
+          <div class="flex items-center gap-3">
+            <button type="button" id="btn-prev-step" class="hidden px-4 py-2.5 border border-gray-600 text-gray-400 hover:text-white hover:border-white font-mono text-[11px] uppercase flex items-center gap-2 transition-colors">
+              <span class="material-symbols-outlined text-sm">arrow_back</span> Geri
+            </button>
+            <button type="button" id="btn-next-step" class="px-6 py-2.5 bg-neon-cyan text-black font-cyber font-bold text-xs uppercase flex items-center gap-2 hover:bg-white transition-colors shadow-[0_0_15px_rgba(0,243,255,0.3)]">
+              Devam Et <span class="material-symbols-outlined text-sm">arrow_forward</span>
+            </button>
+            <button type="submit" id="submit-btn" class="hidden px-6 py-2.5 relative overflow-hidden group bg-neon-cyan text-black font-cyber font-bold text-xs uppercase items-center gap-2 hover:bg-white transition-all shadow-[0_0_20px_rgba(0,243,255,0.4)] hover:shadow-[0_0_30px_rgba(0,243,255,0.6)]">
+              <span class="relative z-10 flex items-center gap-2">
+                ANALİZİ BAŞLAT
+                <span class="material-symbols-outlined text-sm">troubleshoot</span>
+              </span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </form>
+  </main>
+  
+  <script src="theme.js"></script>
+  <script type="module" src="new-analysis.js"></script>
+</body>
+</html>

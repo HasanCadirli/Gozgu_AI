@@ -1,0 +1,2 @@
+cd stitch_ai_ad_analyzer_landing_page
+npm run dev

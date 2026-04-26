@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html class="dark" lang="tr">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <title>Analiz Paneli - Gözgü AI</title>
+  <script>if(localStorage.getItem('gozgu-theme')==='light')document.documentElement.classList.remove('dark');</script>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+  <link href="theme.css" rel="stylesheet"/>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <!-- OpenCV.js & Heatmap.js & pdfmake -->
+  <script src="https://docs.opencv.org/4.5.0/opencv.js" async></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/heatmap.js/2.0.2/heatmap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+  <!-- Chart.js for demographic breakdowns -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "cyber-black": "#050505",
+            "cyber-dark": "#0a0a0f",
+            "neon-cyan": "#00f3ff",
+            "neon-magenta": "#ff00ff",
+            "neon-violet": "#bc13fe",
+            "grid-line": "rgba(0, 243, 255, 0.1)"
+          },
+          fontFamily: {
+            "cyber": ["Orbitron", "sans-serif"],
+            "tech": ["Rajdhani", "sans-serif"]
+          },
+          animation: {
+            'scan': 'scan 3s linear infinite',
+            'pulse-fast': 'pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+          },
+          keyframes: {
+            scan: {
+              '0%': { transform: 'translateY(-100%)' },
+              '100%': { transform: 'translateY(100%)' }
+            }
+          }
+        },
+      },
+    }
+  </script>
+  <style>
+    body {
+      background-color: #050505;
+    }
+    .bg-grid {
+      background-image: linear-gradient(to right, rgba(0, 243, 255, 0.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(0, 243, 255, 0.05) 1px, transparent 1px);
+      background-size: 30px 30px;
+    }
+    .hud-border {
+      position: relative;
+      border: 1px solid rgba(0, 243, 255, 0.2);
+      background: rgba(10, 10, 15, 0.8);
+      backdrop-filter: blur(10px);
+    }
+    .hud-border::before {
+      content: ''; position: absolute; top: -1px; left: -1px; width: 10px; height: 10px;
+      border-top: 2px solid #00f3ff; border-left: 2px solid #00f3ff;
+    }
+    .hud-border::after {
+      content: ''; position: absolute; bottom: -1px; right: -1px; width: 10px; height: 10px;
+      border-bottom: 2px solid #00f3ff; border-right: 2px solid #00f3ff;
+    }
+    .clip-path-slant {
+      clip-path: polygon(5% 0, 100% 0, 100% 90%, 95% 100%, 0 100%, 0 10%);
+    }
+    .progress-bar-bg {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      position: relative;
+      overflow: hidden;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: rgba(0, 243, 255, 0.05);
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: rgba(0, 243, 255, 0.3);
+      border-radius: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: rgba(0, 243, 255, 0.7);
+    }
+    
+    /* Heatmap Grid Stack */
+    .heatmap-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+    .grid-stack {
+      display: grid;
+      grid-template-areas: "stack";
+      align-items: start;
+      justify-items: center;
+    }
+    .grid-stack > * {
+      grid-area: stack;
+    }
+
+    /* Tab System */
+    .tab-btn {
+      position: relative;
+      transition: all 0.25s ease;
+    }
+    .tab-btn::after {
+      content: '';
+      position: absolute;
+      bottom: -1px;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background: transparent;
+      transition: background 0.25s ease;
+    }
+    .tab-btn.active::after {
+      background: #00f3ff;
+      box-shadow: 0 0 8px rgba(0,243,255,0.5);
+    }
+    .tab-content {
+      animation: tabFadeIn 0.3s ease-out;
+    }
+    @keyframes tabFadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body class="bg-cyber-black text-white font-tech min-h-screen relative overflow-x-hidden pt-20">
+  
+  <div class="fixed inset-0 bg-grid z-0 pointer-events-none opacity-40"></div>
+
+  <header class="fixed top-0 w-full z-50 border-b border-neon-cyan/30 bg-cyber-black/90 backdrop-blur-md h-16 flex items-center px-4 md:px-10 justify-between">
+    <div class="flex items-center gap-6">
+      <a href="index.html" class="flex items-center gap-3 select-none group hover:opacity-80 transition-opacity">
+        <span class="material-symbols-outlined text-neon-cyan" style="font-size: 28px;">hub</span>
+        <h2 class="text-white text-lg font-cyber font-bold tracking-widest uppercase">GOZGU.AI <span class="text-xs text-gray-500">// PANEL</span></h2>
+      </a>
+      <button id="nav-campaigns-btn" class="hidden md:flex text-gray-400 hover:text-neon-cyan font-mono text-xs items-center gap-1 transition-colors">
+        <span class="material-symbols-outlined text-[16px]">grid_view</span> KAMPANYALARIM
+      </button>
+    </div>
+    <div class="flex items-center gap-4">
+      <button class="theme-toggle-btn" title="Tema Değiştir">
+        <span class="material-symbols-outlined" style="font-size:20px">light_mode</span>
+      </button>
+      <a href="create-segment.html" id="btn-open-create-segment" class="hidden md:flex items-center gap-2 border border-neon-cyan text-neon-cyan px-4 py-1.5 font-cyber text-xs hover:bg-neon-cyan hover:text-black transition-colors shadow-[0_0_10px_rgba(0,243,255,0.2)]">
+         <span class="material-symbols-outlined text-[16px]">group_add</span> SEGMENT OLUŞTUR
+      </a>
+      <a href="new-analysis.html" id="btn-new-campaign" class="hidden md:flex items-center gap-2 border border-neon-magenta text-neon-magenta px-4 py-1.5 font-cyber text-xs hover:bg-neon-magenta hover:text-black transition-colors shadow-[0_0_10px_rgba(255,0,255,0.2)]">
+        <span class="material-symbols-outlined text-[16px]">add</span> YENİ ANALİZ
+      </a>
+      <div class="font-mono text-[10px] text-neon-magenta blink animate-pulse">CANLI_BAGLANTI</div>
+      <button id="btn-logout" class="text-gray-500 hover:text-red-500 transition-colors ml-4" title="Oturumu Kapat">
+         <span class="material-symbols-outlined">power_settings_new</span>
+      </button>
+    </div>
+  </header>
+
+  <main class="relative z-10 w-full max-w-[1200px] mx-auto px-4 pb-20 pt-8 mt-4">
+
+    <!-- Kampanyalarım Ekranı -->
+    <div id="campaigns-view" class="flex flex-col gap-6 w-full fade-transition">
+      <div class="flex justify-between items-end border-b border-white/10 pb-4 mb-4">
+        <div>
+          <h1 class="text-3xl font-cyber font-bold text-white uppercase tracking-widest">KAMPANYALARIM</h1>
+          <p class="text-gray-400 font-mono text-xs">Toplam kayıt: <span id="campaign-count-display" class="text-neon-cyan">0</span></p>
+        </div>
+        <a href="new-analysis.html" id="btn-new-campaign-mobile" class="md:hidden flex items-center gap-2 border border-neon-magenta text-neon-magenta px-4 py-2 font-cyber text-xs hover:bg-neon-magenta hover:text-black transition-colors">
+          <span class="material-symbols-outlined text-[16px]">add</span> YENİ
+        </a>
+      </div>
+
+      <div id="campaigns-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- JS ile Doldurulacak -->
+      </div>
+      
+      <div id="no-campaigns-msg" class="hidden flex-col items-center justify-center py-20 bg-white/5 border border-dashed border-gray-700">
+        <span class="material-symbols-outlined text-4xl text-gray-600 mb-4">inventory_2</span>
+        <h3 class="text-xl font-cyber text-white mb-2">VERİ BANKASI BULUNAMADI</h3>
+        <p class="text-gray-400 font-mono text-sm mb-6">Simülasyonu başlatmak için ilk kampanyanızı oluşturun.</p>
+        <a href="new-analysis.html" id="btn-create-first" class="bg-neon-cyan text-black px-6 py-3 font-cyber font-bold w-fit mx-auto flex items-center gap-2 hover:bg-white transition-colors clip-path-slant">
+          <span class="material-symbols-outlined">add</span> YÜKLEMEYİ BAŞLAT
+        </a>
+      </div>
+    </div>
+    
+    <!-- Yüklenme Ekranı (n8n beklenirken) -->
+    <div id="loading-view" class="hidden flex-col items-center justify-center min-h-[70vh] gap-6 text-center fade-transition">
+      <div class="relative w-48 h-48 flex items-center justify-center">
+        <div class="absolute inset-0 rounded-full border border-dashed border-neon-magenta animate-[spin_8s_linear_infinite]"></div>
+        <div class="absolute inset-4 rounded-full border border-neon-cyan/50 animate-[spin_4s_linear_infinite_reverse]"></div>
+        <span class="material-symbols-outlined text-[64px] text-neon-cyan animate-pulse">memory</span>
+      </div>
+      <div>
+        <h1 class="text-3xl font-cyber font-bold text-white tracking-widest uppercase mb-2">NÖRAL ANALİZ SÜRÜYOR</h1>
+        <p class="text-gray-400 font-mono text-sm max-w-md mx-auto">LLM Agent sürüsü yaratıcılığınızı seçilen personalara göre değerlendiriyor. Bu işlem ağ gecikmesine bağlı olarak 15-30 saniye sürebilir...</p>
+      </div>
+      <div class="font-mono text-xs text-neon-violet" id="loading-timer">NODLAR BEKLENİYOR: <span class="text-white">0s</span></div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════ -->
+    <!-- SONUÇ EKRANI (5 SEKMELİ ANALİZ MAKİNESİ)      -->
+    <!-- ═══════════════════════════════════════════════ -->
+    <div id="results-view" class="hidden flex-col gap-8 opacity-0 transition-opacity duration-500 fade-transition">
+      
+      <!-- Üst Aksiyon Barı -->
+      <div class="mb-2 flex justify-between items-center w-full" id="top-action-bar">
+        <button id="btn-back-to-campaigns" class="text-gray-400 hover:text-neon-cyan font-mono text-xs flex items-center gap-1 transition-colors w-fit">
+          <span class="material-symbols-outlined text-[16px]">arrow_back</span> VERİ BANKALARINA DÖN
+        </button>
+        <button id="btn-download-pdf" class="text-neon-magenta hover:text-white border border-neon-magenta px-4 py-2 font-mono text-xs flex items-center gap-2 hover:bg-neon-magenta transition-colors shadow-[0_0_10px_rgba(255,0,255,0.2)]">
+          <span class="material-symbols-outlined text-[16px]">picture_as_pdf</span> RAPORU PDF İNDİR (A4)
+        </button>
+      </div>
+
+      <!-- Kampanya Başlığı & Görseli (Tab Dışı — Daima Görünür) -->
+      <div class="flex flex-col md:flex-row gap-8 mt-4">
+        <div class="md:w-1/3 flex flex-col gap-4">
+          <div class="hud-border p-2 bg-black/40">
+            <div id="cmp-img-container" class="grid-stack w-full bg-gray-900 border border-gray-800 overflow-hidden relative group min-h-[300px]">
+              <img id="cmp-img-element" src="" crossorigin="anonymous" class="w-full h-auto block z-10 transition-opacity duration-300">
+              <div id="heatmap-overlay" class="w-full h-full pointer-events-none z-20 relative"></div>
+              
+              <!-- Heatmap Controls Overlay (Hover) -->
+              <div class="absolute bottom-4 left-1/2 -translate-x-1/2 z-30 opacity-0 group-hover:opacity-100 transition-opacity bg-black/80 backdrop-blur-md px-4 py-2 border border-neon-cyan/30 flex items-center gap-4">
+                <div class="flex items-center gap-2">
+                  <span class="text-[10px] font-mono text-gray-400">ISI HARİTASI</span>
+                  <button id="btn-toggle-heatmap" class="w-10 h-5 bg-gray-700 rounded-full relative transition-colors">
+                    <div class="dot absolute left-1 top-1 bg-white w-3 h-3 rounded-full transition-transform"></div>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- VIDEO PLAYER (Video kampanyalarda görsel yerine gösterilir) -->
+            <video id="cmp-video-element" 
+                   class="hidden w-full max-h-80 object-contain border border-white/10 bg-black/40" 
+                   controls muted playsinline>
+            </video>
+          </div>
+          <div id="heatmap-status" class="text-[10px] font-mono text-gray-500 text-center mt-1 hidden">
+            <span class="animate-pulse">Analiz ediliyor...</span>
+          </div>
+        </div>
+        
+        <div class="md:w-2/3 flex flex-col justify-center">
+          <div class="inline-block px-3 py-1 border border-neon-cyan/30 bg-neon-cyan/10 text-neon-cyan font-mono text-xs uppercase w-fit mb-3">
+            ID: <span id="cmp-id">...</span>
+          </div>
+          <h1 class="text-4xl md:text-5xl font-cyber font-bold text-white uppercase tracking-tight mb-2" id="cmp-name">...</h1>
+          <p class="text-xl text-gray-300 font-tech font-medium mb-4" id="cmp-slogan">...</p>
+          
+          <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 border-t border-white/10 pt-4 mt-2">
+            <div>
+              <span class="text-[10px] font-mono text-gray-500 block mb-1">TEMEL HEDEF</span>
+              <span class="text-xs text-neon-magenta font-mono block truncate" id="cmp-obj">...</span>
+              <div class="flex flex-wrap items-center gap-1 mt-2" id="cmp-channels-display"></div>
+            </div>
+            <div>
+              <span class="text-[10px] font-mono text-gray-500 block mb-1">MARKA TONU</span>
+              <span class="text-xs text-neon-cyan font-mono block truncate" id="cmp-tone">...</span>
+            </div>
+            <div>
+              <span class="text-[10px] font-mono text-gray-500 block mb-1">EYLEM ÇAĞRISI (CTA)</span>
+              <span class="text-xs text-neon-violet font-mono block truncate" id="cmp-cta">...</span>
+            </div>
+            <div>
+              <span class="text-[10px] font-mono text-gray-500 block mb-1">DEĞER TEKLİFİ</span>
+              <span class="text-xs text-white font-tech block truncate" id="cmp-value-prop" title="...">...</span>
+            </div>
+          </div>
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-white/10 pt-3 mt-3">
+            <div>
+              <span class="text-[10px] font-mono text-gray-500 block mb-1">HEDEF KİTLE NOTLARI</span>
+              <p class="text-xs text-gray-400 font-tech leading-relaxed line-clamp-3" id="cmp-target">...</p>
+            </div>
+            <div>
+              <span class="text-[10px] font-mono text-red-500/70 block mb-1">MARKA KISITLAMALARI</span>
+              <p class="text-xs text-red-400/80 font-tech leading-relaxed line-clamp-3" id="cmp-guidelines">...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="h-[1px] w-full bg-gradient-to-r from-transparent via-neon-cyan/50 to-transparent my-4"></div>
+
+      <!-- ═══════════════════════════════════════════════ -->
+      <!-- TAB NAVİGASYON SİSTEMİ                         -->
+      <!-- ═══════════════════════════════════════════════ -->
+      <div id="analysis-tabs" class="mt-2">
+        <div class="flex border-b border-white/10 gap-0 overflow-x-auto" id="tab-nav">
+          <button data-tab="overview" class="tab-btn active px-5 py-3 text-[10px] font-mono uppercase tracking-widest text-white whitespace-nowrap flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-xs">dashboard</span> Özet
+          </button>
+          <button data-tab="demographic" class="tab-btn px-5 py-3 text-[10px] font-mono uppercase tracking-widest text-gray-500 hover:text-gray-300 whitespace-nowrap flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-xs">analytics</span> Demografik Analiz
+          </button>
+          <button data-tab="personas" class="tab-btn px-5 py-3 text-[10px] font-mono uppercase tracking-widest text-gray-500 hover:text-gray-300 whitespace-nowrap flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-xs">group</span> Persona Intel
+          </button>
+          <button data-tab="media" class="tab-btn px-5 py-3 text-[10px] font-mono uppercase tracking-widest text-gray-500 hover:text-gray-300 whitespace-nowrap flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-xs">image</span> Medya Analiz
+          </button>
+          <button data-tab="optimization" class="tab-btn px-5 py-3 text-[10px] font-mono uppercase tracking-widest text-gray-500 hover:text-gray-300 whitespace-nowrap flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-xs">auto_fix_high</span> Optimizasyon
+          </button>
+        </div>
+
+        <!-- ═════════════════════════════════════════ -->
+        <!-- TAB 1: ÖZET (Overview)                    -->
+        <!-- ═════════════════════════════════════════ -->
+        <div id="tab-overview" class="tab-content pt-6">
+
+          <!-- Ekonomik Ortam Paneli -->
+          <div id="eco-env-panel" class="hidden mb-2 border border-orange-500/20 bg-black/60 rounded-sm relative overflow-hidden">
+            <div class="absolute inset-0 bg-gradient-to-r from-orange-900/10 via-transparent to-transparent pointer-events-none"></div>
+            <div class="flex justify-between items-center px-4 py-3 border-b border-white/5 relative z-10">
+              <div class="flex items-center gap-3">
+                <span class="material-symbols-outlined text-orange-500 text-2xl">trending_up</span>
+                <div>
+                  <div class="flex items-center gap-2">
+                    <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                    <h2 class="text-[13px] font-cyber font-bold text-white uppercase tracking-wider">Ekonomik Ortam</h2>
+                  </div>
+                  <p class="text-[9px] font-mono text-orange-500/70" id="eco-source-date">TCMB_EVDS // 01 OCAK 1970</p>
+                </div>
+              </div>
+              <div class="border border-white/20 px-3 py-1 bg-white/5 text-[10px] font-cyber text-gray-300 uppercase tracking-widest" id="eco-sentiment">
+                DURAĞAN
+              </div>
+            </div>
+            <div class="grid grid-cols-2 md:grid-cols-7 divide-x divide-y md:divide-y-0 divide-white/5 py-4 relative z-10">
+              <div class="flex flex-col items-center justify-center p-2">
+                <span class="text-[9px] text-gray-500 font-mono mb-1 uppercase text-center">Tüfe (Yıllık)</span>
+                <span class="text-xl font-cyber text-yellow-500" id="eco-cpi">--%</span>
+                <span class="text-[9px] text-gray-600 font-mono mt-1 uppercase text-center">Enflasyon</span>
+              </div>
+              <div class="flex flex-col items-center justify-center p-2">
+                <span class="text-[9px] text-gray-500 font-mono mb-1 uppercase text-center">USD/TRY</span>
+                <span class="text-xl font-cyber text-green-400" id="eco-usd">--₺</span>
+                <span class="text-[9px] text-gray-600 font-mono mt-1 uppercase text-center">Dolar Kuru</span>
+              </div>
+              <div class="flex flex-col items-center justify-center p-2">
+                <span class="text-[9px] text-gray-500 font-mono mb-1 uppercase text-center">EUR/TRY</span>
+                <span class="text-xl font-cyber text-blue-400" id="eco-eur">--₺</span>
+                <span class="text-[9px] text-gray-600 font-mono mt-1 uppercase text-center">Euro Kuru</span>
+              </div>
+              <div class="flex flex-col items-center justify-center p-2">
+                <span class="text-[9px] text-gray-500 font-mono mb-1 uppercase text-center">Polİtİka Faİzİ</span>
+                <span class="text-xl font-cyber text-red-400" id="eco-rate">--%</span>
+                <span class="text-[9px] text-gray-600 font-mono mt-1 uppercase text-center">TCMB</span>
+              </div>
+              <div class="flex flex-col items-center justify-center p-2">
+                <span class="text-[9px] text-gray-500 font-mono mb-1 uppercase text-center">Tüketİcİ Güvenİ</span>
+                <span class="text-xl font-cyber text-cyan-400" id="eco-conf">--</span>
+                <span class="text-[9px] text-gray-600 font-mono mt-1 uppercase text-center">Endeks</span>
+              </div>
+              <div class="flex flex-col items-center justify-center p-2">
+                <span class="text-[9px] text-gray-500 font-mono mb-1 uppercase text-center">İşsİzlİk</span>
+                <span class="text-xl font-cyber text-fuchsia-500" id="eco-unemp">--%</span>
+                <span class="text-[9px] text-gray-600 font-mono mt-1 uppercase text-center">Oran</span>
+              </div>
+              <div class="flex flex-col items-center justify-center p-2 col-span-2 md:col-span-1">
+                <span class="text-[9px] text-gray-500 font-mono mb-1 uppercase text-center">Alım Gücü</span>
+                <span class="text-xl font-cyber text-white" id="eco-power">--</span>
+                <span class="text-[9px] text-gray-600 font-mono mt-1 uppercase text-center">Genel Durum</span>
+              </div>
+            </div>
+            <div class="px-4 py-2 border-t border-white/5 flex flex-col sm:flex-row justify-between items-center text-[9px] font-mono text-orange-500/50 gap-2 relative z-10">
+              <div class="flex items-center gap-1 text-center sm:text-left">
+                <span class="material-symbols-outlined text-[12px] hidden sm:block">info</span>
+                <span>Bu veriler AI persona kararlarını doğrudan etkiler. Personalar ekonomik koşullara göre farklı satın alma davranışları sergiler.</span>
+              </div>
+              <span class="uppercase whitespace-nowrap">Kaynak: TCMB_EVDS</span>
+            </div>
+            <!-- Ekonomik Sahne Önizleme (dashboard.js ile doldurulur) -->
+            <div id="eco-scene-preview" class="mt-2 border-t border-white/10 pt-3 hidden">
+              <button type="button" id="btn-toggle-eco-scene" class="flex items-center gap-2 text-[10px] font-mono text-gray-500 hover:text-neon-cyan transition-colors uppercase w-full text-left px-4 pb-2">
+                <span class="material-symbols-outlined text-[14px]">visibility</span>
+                Personaların Gördüğü Ekonomik Sahne
+                <span class="material-symbols-outlined text-[12px] ml-auto transition-transform" id="eco-scene-arrow">expand_more</span>
+              </button>
+              <div id="eco-scene-content" class="hidden text-[11px] text-gray-400 font-tech leading-relaxed bg-black/80 p-4 border-y border-white/5 whitespace-pre-line max-h-[200px] overflow-y-auto custom-scrollbar italic">
+              </div>
+            </div>
+          </div>
+
+          <!-- Gerçek Zamanlı Gündem & Trend Radarı -->
+          <div id="trend-radar-panel" class="hidden mb-4 border border-rose-500/20 bg-black/60 rounded-sm relative overflow-hidden">
+            <div class="absolute inset-0 bg-gradient-to-r from-rose-900/10 via-transparent to-transparent pointer-events-none"></div>
+            <div class="flex flex-col md:flex-row justify-between md:items-center px-4 py-3 border-b border-white/5 relative z-10 gap-4">
+              <div class="flex items-center gap-3">
+                <span class="material-symbols-outlined text-rose-500 text-2xl animate-pulse">radar</span>
+                <div>
+                  <div class="flex items-center gap-2">
+                    <h2 class="text-[13px] font-cyber font-bold text-white uppercase tracking-wider">Gerçek Zamanlı Gündem & Trend Radar</h2>
+                    <span class="bg-rose-500/20 text-rose-400 border border-rose-500/30 px-1.5 py-0.5 text-[8px] font-mono rounded-sm tracking-widest uppercase">Canlı</span>
+                  </div>
+                  <p class="text-[9px] font-mono text-gray-500" id="trend-source-date">Google Trends & X (Twitter) API Verisi</p>
+                </div>
+              </div>
+              
+              <div class="flex gap-2 text-xs font-mono">
+                 <div class="flex flex-col text-right">
+                    <span class="text-[9px] text-gray-500 uppercase">Toplum Duygu Durumu</span>
+                    <span class="text-white font-bold tracking-widest uppercase" id="trend-societal-mood">---</span>
+                 </div>
+                 <div class="h-8 w-px bg-white/10 mx-2 hidden md:block"></div>
+                 <div class="flex flex-col text-right">
+                    <span class="text-[9px] text-gray-500 uppercase">PR Kriz Riski</span>
+                    <span class="text-rose-400 font-bold" id="trend-risk-score">--%</span>
+                 </div>
+              </div>
+            </div>
+            
+            <div class="p-4 relative z-10 flex flex-col md:flex-row gap-6 items-start md:items-center">
+                <div class="w-full md:w-1/2">
+                    <span class="text-[9px] text-gray-500 font-mono mb-2 block uppercase text-left">Türkiye Gündemi Top 3</span>
+                    <div class="flex flex-wrap gap-2" id="trend-topics-list">
+                        <!-- Dinamik Hashtagler -->
+                    </div>
+                </div>
+                <div class="hidden md:block w-px h-12 bg-white/10"></div>
+                <div class="w-full md:w-1/2 flex gap-3 text-sm font-mono text-gray-300">
+                    <span class="material-symbols-outlined text-rose-400 text-xl flex-shrink-0">campaign</span>
+                    <div id="trend-analysis-text" class="text-[11px] leading-relaxed">
+                        <!-- Dinamik Analiz Texti -->
+                    </div>
+                </div>
+            </div>
+          </div>
+
+          <!-- Toplu AIDA Metrikleri -->
+          <div>
+            <h2 class="text-xl font-cyber font-bold text-white uppercase tracking-widest mb-6 border-l-2 border-neon-cyan pl-3">Toplu AIDA Metrikleri</h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="avg-metrics">
+              <!-- Dinamik Gelecek -->
+            </div>
+          </div>
+
+          <!-- Dönüşüm Hunisi (YENİ) -->
+          <div id="conversion-funnel" class="hud-border p-6 mt-6">
+            <h3 class="text-xs font-mono text-gray-500 uppercase mb-4 flex items-center gap-2">
+              <span class="material-symbols-outlined text-sm">filter_alt</span>
+              AIDA Dönüşüm Hunisi
+            </h3>
+            <div id="funnel-bars" class="space-y-3">
+              <!-- JS ile render edilecek -->
+            </div>
+          </div>
+
+          <!-- Satın Alma Oranı Donut Chart (YENİ) -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+            <div class="hud-border p-6 flex flex-col items-center justify-center">
+              <h3 class="text-xs font-mono text-gray-500 uppercase mb-4 w-full text-left flex items-center gap-2">
+                <span class="material-symbols-outlined text-sm">pie_chart</span>
+                Satın Alma Dağılımı
+              </h3>
+              <canvas id="willbuy-donut-canvas" width="220" height="220"></canvas>
+            </div>
+            <div id="overview-summary-stats" class="hud-border p-6">
+              <h3 class="text-xs font-mono text-gray-500 uppercase mb-4 flex items-center gap-2">
+                <span class="material-symbols-outlined text-sm">summarize</span>
+                Hızlı İstatistikler
+              </h3>
+              <div id="overview-stats-content" class="space-y-3">
+                <!-- JS ile render edilecek -->
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ═════════════════════════════════════════ -->
+        <!-- TAB 2: DEMOGRAFİK ANALİZ (YENİ)          -->
+        <!-- ═════════════════════════════════════════ -->
+        <div id="tab-demographic" class="tab-content hidden pt-6">
+
+          <!-- SES Grubu Kırılımı -->
+          <div class="mb-8">
+            <h2 class="text-xl font-cyber font-bold text-white uppercase tracking-widest mb-6 border-l-2 border-neon-cyan pl-3">SES Grubu Kırılımı</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="ses-breakdown-grid">
+              <!-- JS ile render edilecek -->
+            </div>
+          </div>
+
+          <!-- SES Radar Chart -->
+          <div class="hud-border p-6 mb-8">
+            <h3 class="text-xs font-mono text-gray-500 uppercase mb-4 flex items-center gap-2">
+              <span class="material-symbols-outlined text-sm">radar</span>
+              SES Bazlı AIDA Karşılaştırması (Radar)
+            </h3>
+            <div class="max-w-lg mx-auto">
+              <canvas id="ses-radar-canvas"></canvas>
+            </div>
+          </div>
+
+          <!-- Kuşak Kırılımı -->
+          <div class="mb-8">
+            <h2 class="text-xl font-cyber font-bold text-white uppercase tracking-widest mb-6 border-l-2 border-neon-violet pl-3">Kuşak Kırılımı</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4" id="generation-breakdown-grid">
+              <!-- JS ile render edilecek -->
+            </div>
+          </div>
+
+          <!-- Cinsiyet Kırılımı -->
+          <div class="mb-8">
+            <h2 class="text-xl font-cyber font-bold text-white uppercase tracking-widest mb-6 border-l-2 border-neon-magenta pl-3">Cinsiyet Kırılımı</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="gender-breakdown-grid">
+              <!-- JS ile render edilecek -->
+            </div>
+          </div>
+
+          <!-- Cross-Tab Heatmap (SES × Kuşak) -->
+          <div class="hud-border p-6 mb-8">
+            <h3 class="text-xs font-mono text-gray-500 uppercase mb-4 flex items-center gap-2">
+              <span class="material-symbols-outlined text-sm">grid_on</span>
+              Cross-Tab Analiz — SES × Kuşak AIDA Ortalaması
+            </h3>
+            <div class="overflow-x-auto" id="crosstab-heatmap-container">
+              <!-- JS ile render edilecek -->
+            </div>
+          </div>
+
+          <!-- Baskın Duygu Dağılımı -->
+          <div class="hud-border p-6 mb-8">
+            <h3 class="text-xs font-mono text-gray-500 uppercase mb-4 flex items-center gap-2">
+              <span class="material-symbols-outlined text-sm">mood</span>
+              Baskın Duygu Frekans Haritası
+            </h3>
+            <div id="emotion-map-container" class="space-y-2">
+              <!-- JS ile render edilecek -->
+            </div>
+          </div>
+
+          <!-- Segment Performans Özetleri (TAŞINdı) -->
+          <div id="segment-insights-view" class="hidden">
+            <h2 class="text-xl font-cyber font-bold text-white uppercase tracking-widest mb-6 border-l-2 border-neon-cyan pl-3">Segment Vektör Analizi</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4" id="segment-summary-list">
+              <!-- Dinamik Gelecek -->
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ═════════════════════════════════════════ -->
+        <!-- TAB 3: PERSONA INTEL                      -->
+        <!-- ═════════════════════════════════════════ -->
+        <div id="tab-personas" class="tab-content hidden pt-6">
+
+          <!-- Persona Filtreleri -->
+          <div id="persona-filters" class="flex flex-wrap gap-3 mb-4 items-center">
+            <select id="filter-ses" class="bg-black/60 border border-white/10 text-xs font-mono text-gray-400 px-3 py-2 rounded-sm focus:border-neon-cyan focus:outline-none">
+              <option value="all">Tüm SES</option>
+              <option value="AB">AB</option>
+              <option value="C1">C1</option>
+              <option value="C2_DE">C2_DE</option>
+            </select>
+
+            <select id="filter-generation" class="bg-black/60 border border-white/10 text-xs font-mono text-gray-400 px-3 py-2 rounded-sm focus:border-neon-cyan focus:outline-none">
+              <option value="all">Tüm Kuşaklar</option>
+              <option value="Gen-Z">Gen-Z</option>
+              <option value="Millennial">Millennial</option>
+              <option value="Gen-X">Gen-X</option>
+              <option value="Boomer+">Boomer+</option>
+            </select>
+
+            <select id="filter-gender" class="bg-black/60 border border-white/10 text-xs font-mono text-gray-400 px-3 py-2 rounded-sm focus:border-neon-cyan focus:outline-none">
+              <option value="all">Tüm Cinsiyetler</option>
+              <option value="Kadın">Kadın</option>
+              <option value="Erkek">Erkek</option>
+            </select>
+
+            <select id="filter-willbuy" class="bg-black/60 border border-white/10 text-xs font-mono text-gray-400 px-3 py-2 rounded-sm focus:border-neon-cyan focus:outline-none">
+              <option value="all">Hepsi</option>
+              <option value="true">Satın Alır ✅</option>
+              <option value="false">Almaz ❌</option>
+            </select>
+
+            <select id="sort-by" class="bg-black/60 border border-white/10 text-xs font-mono text-gray-400 px-3 py-2 rounded-sm focus:border-neon-cyan focus:outline-none">
+              <option value="score_desc">AIDA Skor ↓</option>
+              <option value="score_asc">AIDA Skor ↑</option>
+              <option value="age_asc">Yaş ↑</option>
+              <option value="age_desc">Yaş ↓</option>
+              <option value="name">İsim A-Z</option>
+            </select>
+
+            <span id="persona-count" class="text-[10px] font-mono text-gray-600 ml-auto self-center">0/0 persona</span>
+          </div>
+
+          <!-- Persona Zekâ Raporları -->
+          <div class="mt-4">
+            <h2 class="text-xl font-cyber font-bold text-white uppercase tracking-widest mb-6 border-l-2 border-neon-magenta pl-3">Persona Zekâ Raporları</h2>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6" id="persona-list">
+              <!-- Kartlar JavaScript ile buraya eklenecek -->
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ═════════════════════════════════════════ -->
+        <!-- TAB 4: MEDYA ANALİZ                       -->
+        <!-- ═════════════════════════════════════════ -->
+        <div id="tab-media" class="tab-content hidden pt-6">
+
+          <!-- MEDYA AI ANALİZİ PANELİ (TAŞINDI) -->
+          <div id="media-analysis-view" class="hidden">
+            <div class="flex items-center gap-2 mb-4">
+              <span class="material-symbols-outlined text-neon-cyan text-lg">smart_display</span>
+              <h2 class="font-cyber text-sm text-white uppercase tracking-[0.3em]">MEDYA AI ANALİZİ</h2>
+              <div class="flex-1 h-[1px] bg-gradient-to-r from-neon-cyan/30 to-transparent ml-4"></div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <!-- Görsel Analiz Kartı -->
+              <div class="hud-border p-5 relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-neon-violet/50 to-transparent"></div>
+                <div class="flex items-center gap-2 mb-3">
+                  <span class="material-symbols-outlined text-neon-violet text-sm">visibility</span>
+                  <h3 class="font-cyber text-[11px] text-neon-violet uppercase tracking-widest">GÖRSEL ANALİZ</h3>
+                  <span id="visual-analysis-badge" class="text-[8px] font-mono px-2 py-0.5 rounded-full bg-neon-violet/10 border border-neon-violet/30 text-neon-violet ml-auto">SmolVLM2</span>
+                </div>
+                <div id="visual-analysis-content" class="text-sm text-gray-300 font-tech leading-relaxed space-y-2">
+                  <p class="text-gray-500 italic text-xs">Görsel analiz verisi bekleniyor...</p>
+                </div>
+              </div>
+              <!-- Ses Transkript Kartı -->
+              <div class="hud-border p-5 relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-neon-magenta/50 to-transparent"></div>
+                <div class="flex items-center gap-2 mb-3">
+                  <span class="material-symbols-outlined text-neon-magenta text-sm">mic</span>
+                  <h3 class="font-cyber text-[11px] text-neon-magenta uppercase tracking-widest">SES TRANSKRİPT</h3>
+                  <span id="audio-analysis-badge" class="text-[8px] font-mono px-2 py-0.5 rounded-full bg-neon-magenta/10 border border-neon-magenta/30 text-neon-magenta ml-auto">Whisper</span>
+                </div>
+                <div id="audio-analysis-content" class="text-sm text-gray-300 font-tech leading-relaxed space-y-2">
+                  <p class="text-gray-500 italic text-xs">Ses analiz verisi bekleniyor...</p>
+                </div>
+                <div id="transcript-timestamps" class="hidden mt-3 pt-3 border-t border-white/5">
+                  <button onclick="document.getElementById('timestamps-detail').classList.toggle('hidden')" class="text-[9px] font-mono text-gray-500 hover:text-neon-magenta transition-colors uppercase tracking-wider">▶ Zaman Damgalı Transkript</button>
+                  <pre id="timestamps-detail" class="hidden mt-2 text-[10px] font-mono text-gray-600 whitespace-pre-wrap max-h-40 overflow-y-auto"></pre>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Medya Bütçesi Dağılım Önerisi (TAŞINDI) -->
+          <div id="media-budget-view" class="mt-8 hidden">
+            <h2 class="text-xl font-cyber font-bold text-white uppercase tracking-widest mb-6 border-l-2 border-neon-magenta pl-3">Medya Bütçesi Dağılım Önerisi</h2>
+            <div class="hud-border p-6 bg-black/40">
+               <div class="flex flex-col md:flex-row gap-8 items-center">
+                 <div class="w-full md:w-5/12 relative">
+                     <div id="media-budget-chart" class="w-full space-y-4">
+                        <!-- Dinamik Çubuk Grafikler Buraya Gelecek -->
+                     </div>
+                 </div>
+                 <div class="w-full md:w-7/12 border-l border-white/10 pl-6 border-t md:border-t-0 pt-6 md:pt-0">
+                    <h3 class="font-cyber text-lg text-neon-cyan mb-2 flex items-center gap-2">
+                        <span class="material-symbols-outlined">account_balance_wallet</span> AI Medya Planlaması
+                    </h3>
+                    <p class="font-tech text-gray-400 text-sm mb-4 leading-relaxed">Bu reklamı olumlu karşılayan ve etkileşime geçen (Satın Alır) personaların en çok vakit geçirdiği mecralar analiz edilerek aşağıdaki optimum bütçe dağılımı çıkarılmıştır.</p>
+                    <div id="media-budget-advice" class="text-sm font-mono text-gray-300 mt-2 border border-neon-cyan/20 bg-neon-cyan/5 p-4 flex gap-3 items-start">
+                      <span class="material-symbols-outlined text-neon-cyan text-xl">lightbulb</span>
+                      <div id="media-budget-advice-text">
+                          <!-- AI Tavsiye Metni -->
+                      </div>
+                    </div>
+                 </div>
+               </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ═════════════════════════════════════════ -->
+        <!-- TAB 5: OPTİMİZASYON (TAŞINDI)            -->
+        <!-- ═════════════════════════════════════════ -->
+        <div id="tab-optimization" class="tab-content hidden pt-6">
+
+          <!-- AI Optimization & Pomelli Yönlendirmesi -->
+          <div id="optimization-container" class="mb-8 border border-neon-magenta/50 bg-black/40 p-6 relative overflow-hidden group hidden">
+            <div class="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-neon-magenta via-neon-cyan to-neon-magenta"></div>
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4">
+              <div>
+                <h2 class="text-2xl font-cyber font-bold text-white uppercase tracking-widest flex items-center gap-2">
+                  <span class="material-symbols-outlined text-neon-magenta text-3xl">auto_awesome</span> REKLAM OPTİMİZATÖRÜ (BETA)
+                </h2>
+                <p class="text-gray-400 font-mono text-xs mt-1">Nöral analiz sonuçlarına göre bu reklamı nasıl daha iyi kurgularız?</p>
+              </div>
+              <button id="btn-optimize-campaign" class="bg-neon-magenta text-black px-6 py-2 font-cyber font-bold hover:bg-white hover:text-black transition-colors flex items-center gap-2 clip-path-slant group-hover:shadow-[0_0_15px_rgba(255,0,255,0.4)]">
+                <span class="material-symbols-outlined">upgrade</span> ŞİMDİ OPTİMİZE ET
+              </button>
+            </div>
+
+            <!-- Yükleniyor Durumu -->
+            <div id="opt-loading" class="hidden flex items-center gap-3 py-4 border-t border-white/10 mt-4">
+              <span class="material-symbols-outlined animate-spin text-neon-magenta">refresh</span>
+              <span class="font-mono text-sm text-neon-magenta animate-pulse">Gemini 2.5 Flash reklamı yeniden kurguluyor (Bu işlem 15-20 saniye sürebilir)...</span>
+            </div>
+
+            <!-- Sonuç Bölümü -->
+            <div id="opt-results" class="hidden flex flex-col gap-6 pt-4 border-t border-white/10 mt-4">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-neon-magenta/10 border border-neon-magenta/30 p-4">
+                  <h3 class="font-mono text-[10px] text-neon-magenta mb-2 uppercase tracking-widest">Daha İyi Bir Slogan Fikri</h3>
+                  <p id="opt-slogan" class="font-cyber text-lg text-white">...</p>
+                </div>
+                <div class="bg-neon-cyan/10 border border-neon-cyan/30 p-4">
+                  <h3 class="font-mono text-[10px] text-neon-cyan mb-2 uppercase tracking-widest">Nöromarketing Tavsiyesi</h3>
+                  <p id="opt-trigger" class="font-tech text-sm text-gray-200">...</p>
+                </div>
+              </div>
+              <div class="bg-white/5 border border-white/10 p-4">
+                 <h3 class="font-mono text-[10px] text-gray-400 mb-2 uppercase tracking-widest">Görsel / Video Konsepti (Prompt)</h3>
+                 <p id="opt-visual" class="font-tech text-sm text-gray-300">...</p>
+              </div>
+              
+              <!-- Pomelli Prompt & Yönlendirme -->
+              <div class="mt-4 border border-[#FF6B6B] bg-gradient-to-br from-[#1a0505] to-[#2A0808] relative overflow-hidden">
+                 
+                 <!-- Action Header -->
+                 <div class="p-4 border-b border-white/5 flex flex-wrap items-center justify-between gap-4">
+                   <h3 class="font-cyber font-bold text-lg text-white flex items-center gap-2">
+                     <span class="text-[#FF6B6B] material-symbols-outlined">auto_fix_high</span> Pomelli & Strateji Merkezi
+                   </h3>
+                   <button id="btn-reanalyze-concept" class="bg-neon-cyan text-black px-4 py-2 font-mono text-[10px] font-bold hover:bg-white transition-all flex items-center gap-2 shadow-[0_0_15px_rgba(0,243,255,0.2)]">
+                      <span class="material-symbols-outlined text-sm">replay</span> BU KONSEPTLE YENİ ANALİZ BAŞLAT
+                   </button>
+                 </div>
+
+                 <div class="p-6 flex flex-col md:flex-row gap-8 items-start">
+                   <div class="flex-1 w-full">
+                     <p class="font-mono text-[10px] text-gray-400 mb-2 uppercase tracking-tighter">01. STRATEJİK PROMPT (KOPYALA):</p>
+                     <div class="relative group/prompt mb-6">
+                       <div id="opt-pomelli-prompt" class="bg-black/60 border border-white/10 p-4 font-mono text-[11px] text-gray-300 leading-relaxed min-h-[80px] break-words">...</div>
+                       <button id="btn-copy-prompt" class="absolute top-2 right-2 bg-white/10 hover:bg-white/20 p-2 text-white transition-colors" title="Promptu Kopyala">
+                         <span class="material-symbols-outlined text-sm">content_copy</span>
+                       </button>
+                       <div id="copy-feedback" class="absolute top-2 right-12 bg-green-500 text-white text-[10px] px-2 py-1 rounded opacity-0 transition-opacity">KOPYALANDI!</div>
+                     </div>
+
+                     <!-- Pomelli Tutorial -->
+                     <div class="bg-white/5 p-4 border-l-2 border-[#FF6B6B]">
+                        <h4 class="font-tech text-xs font-bold text-white mb-3 flex items-center gap-1 uppercase tracking-widest">
+                           <span class="material-symbols-outlined text-sm">help</span> Pomelli Nasıl Kullanılır?
+                        </h4>
+                        <ul class="space-y-3 font-mono text-[10px] text-gray-400 list-none p-0">
+                           <li class="flex items-start gap-2"><span class="text-[#FF6B6B] font-bold">1:</span> Kopyaladığınız prompt ile <a href="https://labs.google.com/u/0/pomelli/onboarding" target="_blank" class="text-white underline">Pomelli</a>'ye giriş yapın.</li>
+                           <li class="flex items-start gap-2"><span class="text-[#FF6B6B] font-bold">2:</span> 'Design DNA' kısmında web sitenizi taratın.</li>
+                           <li class="flex items-start gap-2"><span class="text-[#FF6B6B] font-bold">3:</span> 'Create' veya 'Campaign Idea' kutusuna bu promptu yapıştırın.</li>
+                           <li class="flex items-start gap-2"><span class="text-[#FF6B6B] font-bold">4:</span> Saniyeler içinde AI tarafından üretilen profesyonel görselleri indirin!</li>
+                        </ul>
+                     </div>
+                   </div>
+
+                   <div class="md:w-1/3 flex flex-col gap-4 text-center border-l border-white/10 pl-8 h-full">
+                     <span class="text-[#FF6B6B] material-symbols-outlined text-5xl mx-auto opacity-80">brush</span>
+                     <p class="font-tech text-xs text-gray-400 leading-relaxed">Yeni reklam kreatiflerinizi oluşturmak için Google'ın en güçlü görsel üretim motorunu kullanın.</p>
+                     <a href="https://labs.google.com/u/0/pomelli/onboarding" target="_blank" class="bg-[#FF6B6B] text-white px-6 py-3 font-cyber font-bold text-xs hover:bg-white hover:text-black transition-all rounded-sm shadow-[0_0_20px_rgba(255,107,107,0.3)] mt-2">
+                        POMELLI'Yİ AÇ (YENİ SEKME)
+                     </a>
+                   </div>
+                 </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+      <!-- Tab System Sonu -->
+
+    </div>
+  </main>
+
+
+
+  <style>
+    .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: rgba(0,0,0,0.3); }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,243,255,0.3); }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(0,243,255,0.8); }
+    
+    .persona-checkbox-label {
+       transition: all 0.2s;
+    }
+    input[type="checkbox"]:checked + .persona-checkbox-label {
+       border-color: #00f3ff;
+       background-color: rgba(0, 243, 255, 0.1);
+    }
+    input[type="checkbox"]:checked + .persona-checkbox-label .check-icon {
+       opacity: 1;
+       color: #00f3ff;
+    }
+    input[type="checkbox"]:checked + .persona-checkbox-label .persona-name {
+       color: #00f3ff;
+    }
+    .check-icon { opacity: 0; transition: opacity 0.2s; }
+  </style>
+
+  <script src="theme.js"></script>
+  <script type="module" src="dashboard.js"></script>
+</body>
+</html>

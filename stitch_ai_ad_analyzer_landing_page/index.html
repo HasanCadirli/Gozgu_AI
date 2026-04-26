@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html class="dark" lang="tr"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Gözgü AI - Geleceğin Reklam Analizörü</title>
+<script>if(localStorage.getItem('gozgu-theme')==='light')document.documentElement.classList.remove('dark');</script>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&amp;family=Rajdhani:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="theme.css" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "cyber-black": "#050505",
+            "cyber-dark": "#0a0a0f",
+            "neon-cyan": "#00f3ff",
+            "neon-magenta": "#ff00ff",
+            "neon-violet": "#bc13fe",
+            "ui-gray": "#1a1a2e",
+            "grid-line": "rgba(0, 243, 255, 0.1)"
+          },
+          fontFamily: {
+            "cyber": ["Orbitron", "sans-serif"],
+            "tech": ["Rajdhani", "sans-serif"]
+          },
+          backgroundImage: {
+            'grid-pattern': "linear-gradient(to right, rgba(0, 243, 255, 0.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(0, 243, 255, 0.05) 1px, transparent 1px)",
+            'scanlines': "linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.2) 50%, rgba(0,0,0,0.2))"
+          },
+          boxShadow: {
+            'neon-cyan': '0 0 10px #00f3ff, 0 0 20px #00f3ff, 0 0 40px rgba(0, 243, 255, 0.5)',
+            'neon-magenta': '0 0 10px #ff00ff, 0 0 20px #ff00ff',
+            'hud': 'inset 0 0 20px rgba(0, 243, 255, 0.1), 0 0 10px rgba(0, 243, 255, 0.2)'
+          }
+        },
+      },
+    }
+  </script>
+<style>
+    body {
+      background-color: #050505;
+      background-size: 40px 40px, 100% 4px;
+    }
+    .bg-grid {
+      background-image: linear-gradient(to right, rgba(0, 243, 255, 0.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(0, 243, 255, 0.05) 1px, transparent 1px);
+      background-size: 40px 40px;
+    }
+    .scanline-overlay {
+      background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,0.3));
+      background-size: 100% 4px;
+      pointer-events: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 9999;
+      opacity: 0.15;
+    }
+    .glitch-text {
+      position: relative;
+    }
+    .glitch-text::before,
+    .glitch-text::after {
+      content: attr(data-text);
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
+    .glitch-text::before {
+      left: 2px;
+      text-shadow: -1px 0 #ff00ff;
+      clip: rect(44px, 450px, 56px, 0);
+      animation: glitch-anim 5s infinite linear alternate-reverse;
+    }
+    .glitch-text::after {
+      left: -2px;
+      text-shadow: -1px 0 #00f3ff;
+      clip: rect(44px, 450px, 56px, 0);
+      animation: glitch-anim2 5s infinite linear alternate-reverse;
+    }
+    @keyframes glitch-anim {
+      0% { clip: rect(31px, 9999px, 91px, 0); }
+      20% { clip: rect(6px, 9999px, 83px, 0); }
+      40% { clip: rect(89px, 9999px, 2px, 0); }
+      60% { clip: rect(13px, 9999px, 98px, 0); }
+      80% { clip: rect(49px, 9999px, 26px, 0); }
+      100% { clip: rect(84px, 9999px, 6px, 0); }
+    }
+    @keyframes glitch-anim2 {
+      0% { clip: rect(65px, 9999px, 10px, 0); }
+      20% { clip: rect(55px, 9999px, 3px, 0); }
+      40% { clip: rect(2px, 9999px, 47px, 0); }
+      60% { clip: rect(98px, 9999px, 82px, 0); }
+      80% { clip: rect(3px, 9999px, 36px, 0); }
+      100% { clip: rect(72px, 9999px, 5px, 0); }
+    }
+    .hud-border {
+      position: relative;
+      border: 1px solid rgba(0, 243, 255, 0.3);
+      background: rgba(10, 10, 15, 0.7);
+    }
+    .hud-border::before {
+      content: '';
+      position: absolute;
+      top: -1px; left: -1px;
+      width: 10px; height: 10px;
+      border-top: 2px solid #00f3ff;
+      border-left: 2px solid #00f3ff;
+    }
+    .hud-border::after {
+      content: '';
+      position: absolute;
+      bottom: -1px; right: -1px;
+      width: 10px; height: 10px;
+      border-bottom: 2px solid #00f3ff;
+      border-right: 2px solid #00f3ff;
+    }
+    .hud-corner-tr {
+      position: absolute;
+      top: -1px; right: -1px;
+      width: 10px; height: 10px;
+      border-top: 2px solid #00f3ff;
+      border-right: 2px solid #00f3ff;
+    }
+    .hud-corner-bl {
+      position: absolute;
+      bottom: -1px; left: -1px;
+      width: 10px; height: 10px;
+      border-bottom: 2px solid #00f3ff;
+      border-left: 2px solid #00f3ff;
+    }
+    .clip-path-slant {
+      clip-path: polygon(10% 0, 100% 0, 100% 90%, 90% 100%, 0 100%, 0 10%);
+    }
+    .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: rgba(0,0,0,0.3); }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,243,255,0.3); }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(0,243,255,0.8); }
+    
+    .persona-checkbox-label { transition: all 0.2s; }
+    input[type="checkbox"]:checked + .persona-checkbox-label {
+       border-color: #00f3ff;
+       background-color: rgba(0, 243, 255, 0.1);
+    }
+    input[type="checkbox"]:checked + .persona-checkbox-label .check-icon {
+       opacity: 1;
+       color: #00f3ff;
+    }
+    input[type="checkbox"]:checked + .persona-checkbox-label .persona-name {
+       color: #00f3ff;
+    }
+    .check-icon { opacity: 0; transition: opacity 0.2s; }
+
+    /* === CHANNEL MODAL STYLES === */
+    .ch-tab { transition: all 0.2s; border-bottom: 2px solid transparent; }
+    .ch-tab.active { color: #00f3ff; border-bottom-color: #00f3ff; }
+    .ch-tab-panel { display: none; }
+    .ch-tab-panel.active { display: block; }
+    
+    /* Mockup frames */
+    .mockup-frame { border: 2px solid rgba(0,243,255,0.4); background: #0a0a0a; position: relative; overflow: hidden; box-shadow: 0 0 20px rgba(0,243,255,0.15); }
+    .mockup-frame-phone { width: 200px; height: 355px; border-radius: 20px; margin: 0 auto; }
+    .mockup-frame-square { width: 280px; height: 280px; margin: 0 auto; }
+    .mockup-frame-email { width: 100%; max-width: 460px; height: 220px; margin: 0 auto; }
+    .mockup-frame-banner { width: 100%; max-width: 460px; height: 130px; margin: 0 auto; }
+    .mockup-frame-browser { width: 100%; max-width: 460px; height: 220px; margin: 0 auto; }
+    .mockup-notch { background: #000; border-radius: 0 0 10px 10px; width: 80px; height: 18px; margin: 0 auto; position: absolute; top: 0; left: 50%; transform: translateX(-50%); z-index: 2; }
+    .mockup-browser-bar { background: #1a1a1a; height: 28px; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; padding: 0 8px; gap: 5px; }
+    .browser-dot { width: 8px; height: 8px; border-radius: 50%; }
+    
+    /* Score bars */
+    .score-bar-bg { background: rgba(255,255,255,0.05); height: 8px; width: 100%; }
+    .score-bar-fill { height: 100%; transition: width 1s ease-out; width: 0; }
+    
+    /* Persona highlight */
+    .persona-tag.recommended { border-color: #00f3ff; color: #00f3ff; }
+    .persona-tag { border: 1px solid rgba(255,255,255,0.15); padding: 6px 10px; font-family: monospace; font-size: 11px; color: #888; }
+  </style>
+</head>
+<body class="bg-cyber-black text-white font-tech overflow-x-hidden relative">
+<div class="scanline-overlay"></div>
+<div class="bg-grid absolute inset-0 z-0 pointer-events-none opacity-40"></div>
+<div class="relative w-full z-50 border-b border-neon-cyan/30 bg-cyber-black/90 backdrop-blur-md sticky top-0">
+<div class="layout-container flex h-full grow flex-col">
+<div class="px-4 md:px-10 flex justify-center">
+<div class="layout-content-container flex flex-col max-w-[1200px] flex-1">
+<header class="flex items-center justify-between whitespace-nowrap py-4">
+<div class="flex items-center gap-3 select-none group">
+<div class="relative">
+<span class="material-symbols-outlined text-neon-cyan animate-pulse" style="font-size: 32px;">hub</span>
+<div class="absolute inset-0 bg-neon-cyan/20 blur-md"></div>
+</div>
+<div class="flex flex-col">
+<h2 class="text-white text-xl font-cyber font-bold tracking-widest uppercase glitch-text" data-text="GOZGU.AI">GOZGU.AI</h2>
+<span class="text-[10px] text-neon-violet font-mono tracking-[0.2em] leading-none">SIS.VER.4.0.2</span>
+</div>
+</div>
+<div class="hidden md:flex flex-1 justify-end gap-12 items-center">
+<div class="flex items-center gap-8 font-mono text-xs tracking-widest text-gray-400">
+<a class="hover:text-neon-cyan transition-colors relative group py-1" href="#features">
+                  // ÖZELLİKLER
+                  <span class="absolute bottom-0 left-0 w-0 h-[1px] bg-neon-cyan group-hover:w-full transition-all duration-300"></span>
+</a>
+<a class="hover:text-neon-cyan transition-colors relative group py-1" href="#protocols">
+                  // PROTOKOLLER
+                  <span class="absolute bottom-0 left-0 w-0 h-[1px] bg-neon-cyan group-hover:w-full transition-all duration-300"></span>
+</a>
+
+<!-- Tema Toggle -->
+<button class="theme-toggle-btn" title="Tema Değiştir">
+  <span class="material-symbols-outlined" style="font-size:20px">light_mode</span>
+</button>
+
+<!-- Giriş yapmamış kullanıcı aksiyonları -->
+<div id="nav-unauth" class="flex items-center gap-8 border-l border-white/20 pl-8 ml-4">
+  <button id="nav-login-btn" class="hover:text-neon-cyan transition-colors uppercase cursor-pointer">
+                    // GİRİŞ YAP
+  </button>
+  <button id="nav-register-btn" class="relative group overflow-hidden bg-transparent border border-neon-cyan px-8 py-2 font-cyber font-bold text-sm tracking-wider uppercase text-neon-cyan hover:text-black hover:bg-neon-cyan transition-all duration-300 clip-path-slant shadow-[0_0_15px_rgba(0,243,255,0.3)] hover:shadow-[0_0_25px_rgba(0,243,255,0.6)]">
+  <span class="relative z-10 flex items-center gap-2">
+  <span class="material-symbols-outlined text-[18px]">terminal</span>
+                    ÜCRETSİZ KAYIT OL
+                  </span>
+  <div class="absolute top-0 right-0 p-[2px] text-[8px] font-mono text-neon-cyan/50 group-hover:text-black/50">CMD_EXEC</div>
+  </button>
+</div>
+
+<!-- Giriş yapmış kullanıcı menüsü -->
+<div id="nav-auth" class="hidden flex items-center gap-6 border-l border-neon-cyan/30 pl-8 ml-4 group relative">
+  <div class="flex items-center gap-3 cursor-pointer">
+    <div class="w-8 h-8 rounded-full border border-neon-cyan bg-cyber-dark flex items-center justify-center text-neon-cyan overflow-hidden relative">
+       <span class="material-symbols-outlined text-sm">person</span>
+       <div class="absolute inset-0 bg-neon-cyan/10"></div>
+    </div>
+    <div class="flex flex-col">
+       <span id="user-display-email" class="text-xs text-white uppercase tracking-wider">USER_NAME</span>
+       <span class="text-[8px] text-neon-cyan font-mono border border-neon-cyan/20 px-1 w-fit bg-neon-cyan/10">AUTH_VALID</span>
+    </div>
+  </div>
+  
+  <a href="dashboard.html" class="flex items-center gap-2 border border-neon-cyan text-neon-cyan px-4 py-1.5 font-cyber text-xs hover:bg-neon-cyan hover:text-black transition-colors shadow-[0_0_10px_rgba(0,243,255,0.2)] ml-4">
+    <span class="material-symbols-outlined text-[16px]">dashboard</span> PANEL
+  </a>
+  
+  <button id="btn-logout" class="text-gray-500 hover:text-red-500 transition-colors ml-4" title="Disconnect Session">
+     <span class="material-symbols-outlined">power_settings_new</span>
+  </button>
+</div>
+
+</div>
+</div>
+<button id="mobile-menu-toggle" class="md:hidden text-neon-cyan border border-neon-cyan/50 p-1 bg-black/50">
+<span class="material-symbols-outlined">dataset</span>
+</button>
+</header>
+</div>
+</div>
+</div>
+</div>
+<div class="relative flex w-full flex-col min-h-screen justify-center overflow-hidden">
+<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-neon-violet/10 rounded-full blur-[150px] pointer-events-none animate-pulse"></div>
+<div class="absolute top-20 right-20 w-64 h-64 border border-neon-cyan/20 rounded-full border-dashed animate-[spin_10s_linear_infinite]"></div>
+<div class="layout-container flex h-full grow flex-col z-10">
+<div class="px-4 md:px-10 flex flex-1 justify-center py-10 md:py-20">
+<div class="layout-content-container flex flex-col max-w-[1200px] flex-1">
+<div class="@container">
+<div class="flex flex-col gap-12 lg:flex-row items-center">
+<div class="flex flex-col gap-8 lg:w-1/2 justify-center relative">
+<div class="absolute -left-12 top-0 bottom-0 w-[1px] bg-gradient-to-b from-transparent via-neon-cyan/50 to-transparent hidden lg:block"></div>
+<div class="flex flex-col gap-6 text-left">
+<div class="inline-flex items-center gap-3 px-4 py-1 border border-neon-cyan/30 bg-cyber-dark w-fit clip-path-slant">
+<span class="w-2 h-2 bg-neon-magenta animate-ping"></span>
+<span class="text-xs font-mono text-neon-cyan uppercase tracking-widest">Sistem Çevrimiçi: Beta Erişimi</span>
+</div>
+<h1 class="text-white text-5xl sm:text-6xl lg:text-7xl font-cyber font-black leading-[1.1] tracking-tight uppercase glitch-text mb-2" data-text="REKLAM GERÇEKLİĞİNİ ÇÖZÜN">
+                    REKLAM <br/>
+<span class="text-transparent bg-clip-text bg-gradient-to-r from-neon-cyan via-white to-neon-magenta drop-shadow-[0_0_10px_rgba(0,243,255,0.5)]">GERÇEKLİĞİNİ ÇÖZÜN</span>
+</h1>
+<h2 class="text-gray-400 text-lg font-tech font-medium leading-relaxed max-w-[540px] border-l-2 border-neon-violet pl-6">
+<span class="text-neon-cyan font-mono text-xs block mb-2">// GÖREV_ÖZETİ</span>
+                    Reklam görsellerini yükle. Yapay zeka destekli nöral geri bildirim al. Bütçe harcamadan önce dönüşüm matrisini optimize et. Kayıpları yok et. Etkiyi maksimize et.
+                  </h2>
+</div>
+<div class="flex flex-col sm:flex-row gap-6 mt-4">
+<button id="btn-init-core" class="relative group bg-neon-cyan text-black px-8 py-4 font-cyber font-bold tracking-wider uppercase clip-path-slant hover:bg-white transition-all shadow-neon-cyan">
+<span class="flex items-center gap-2">
+                      SİSTEMİ BAŞLAT
+                      <span class="material-symbols-outlined text-sm">arrow_forward</span>
+</span>
+<div class="absolute -bottom-6 left-0 text-[10px] text-neon-cyan font-mono opacity-0 group-hover:opacity-100 transition-opacity">:: ÇALIŞTIRILIYOR ::</div>
+</button>
+<button id="btn-view-simulation" class="relative px-8 py-4 font-cyber font-bold tracking-wider uppercase text-white border border-neon-magenta hover:bg-neon-magenta/10 transition-colors clip-path-slant group">
+<span class="flex items-center gap-2">
+<span class="material-symbols-outlined text-neon-magenta group-hover:animate-spin">data_usage</span>
+                      SİMÜLASYONU GÖR
+                    </span>
+</button>
+</div>
+<div class="flex items-center gap-6 text-xs font-mono text-gray-500 pt-6 border-t border-white/10 mt-2">
+<div class="flex -space-x-4">
+<div class="w-10 h-10 rounded-none border border-neon-cyan bg-gray-900 grayscale hover:grayscale-0 transition-all z-0 hover:z-10" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDOFxaV0nMI5s_BDYQP_ZeYpvOqYRb4IAIQnLX20D6TSSnZm8C26mLMRFHXbUeEoCdxu1ZpZe9koGBiY63sTOYGZz_yAS5IGKDd1MKD8SIzrOWGBdIcGuI1CICVCJ2v2GA5-z1FT4XaFJv9oeEl02X7taPrmwzAqbFfDyPCbadoIIYz3UOtONM8F_6OtZqrJNyozLq8iJ-zEfbFl-DsNjzax9ftFT155lbEuKLXNxmrIEBJmSPq9wtYXPmzslosKy-NlyXuUQoBCQI'); background-size: cover;"></div>
+<div class="w-10 h-10 rounded-none border border-neon-cyan bg-gray-900 grayscale hover:grayscale-0 transition-all z-0 hover:z-10" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCdW9IzPQ1VbHJybGcDHzLHsFDilAt-swd3WiOOX_cp0Q3pRqURfwSDjYGvfiY9WEuLO2bwuHCVtB9Kh9YFXqWnnC8cBKUPKIsF8Y4n8wHq6gowIuYbnbxsHHINPKUq5cQGwaku-Ljs5oqI1Agdpuw9JZ-EL8BMGyPiHhdIokZe7pN-wZYsvdyd1tLLA9t_c0vVcmjscWmK6K-HM2dTrEyHTlkQqVwwJ_OTZqvM1ZeQSiTwY08_uGYCOdUaLJq-aifKOBp9gza1GVI'); background-size: cover;"></div>
+<div class="w-10 h-10 rounded-none border border-neon-cyan bg-gray-900 grayscale hover:grayscale-0 transition-all z-0 hover:z-10" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCXwZPNEDFXsK8rxkRkWlvfNKvT9OyvrvMGLuuDUkCz5cV1jHd_DZX13WADHKhxkrAUyc5OLW0olpVrat0NZZXXpHrtujUIj2Ah8LstCIUhENWL-woXsa-ybpzU58jd-m3t-6YJUP4KpDqUm-xbSwDa7_JrPFtMWEtbCyWrzrZBUrWc19z1gHw_MDx5rotpQ0n1KbMq88RlGoKnTlKrqxWB9AS7QDVJfqi55jJh_aAszET-uom6ZRxiO6gpf4qekQxtswUtAH5zMqY'); background-size: cover;"></div>
+</div>
+<p class="uppercase tracking-widest"><span id="stat-nodes-count" class="text-neon-magenta font-bold">1,024</span> NOD BAĞLI</p>
+</div>
+</div>
+<div class="w-full lg:w-1/2 relative z-10 group perspective-1000">
+<div class="relative w-full aspect-square md:aspect-video lg:aspect-square max-h-[600px] border border-neon-cyan/30 bg-black/40 backdrop-blur-sm p-2 overflow-hidden hud-border transform transition-transform duration-500 group-hover:rotate-y-2 group-hover:scale-[1.02]">
+<div class="hud-corner-tr"></div>
+<div class="hud-corner-bl"></div>
+<div class="absolute top-4 right-4 flex flex-col items-end gap-1 z-20">
+<span class="text-[10px] font-mono text-neon-cyan">X: 42.091</span>
+<span class="text-[10px] font-mono text-neon-cyan">Y: 11.224</span>
+<span class="text-[10px] font-mono text-neon-violet blink">REC ●</span>
+</div>
+<div class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0IiBoZWlnaHQ9IjQiPgo8cmVjdCB3aWR0aD0iNCIgaGVpZ2h0PSI0IiBmaWxsPSIjMDAwIiBmaWxsLW9wYWNpdHk9IjAuMSIvPgo8L3N2Zz4=')] pointer-events-none z-10"></div>
+<div class="w-full h-full relative overflow-hidden">
+<div class="absolute inset-0 bg-gradient-to-t from-neon-violet/20 via-transparent to-transparent z-10 mix-blend-screen"></div>
+<div class="w-full h-full bg-center bg-no-repeat bg-cover filter contrast-125 saturate-150 grayscale-[0.2]" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDkD8Z5MOcs82Mp2Zg5z2Vp5z3XOvey8FR3tv-KaMpxSOs9kMHF9bdQRKV0JEEzDzQjyeSaOgrvFsHy0Jgb0wsVa5nVviGCEc5V2ydF9j14dq3bWDDV5ykVOIj-jK31TCRWNnU6l3rBbRKJKMTRL1OR03vtTS-M4WAX6acUJl4weSb3gImz6sP44eyV4rPLvnkC55mP4c6pnuWmdyQUx0KcqQBy5LIaZDO-Jgpoz_mcMYBKfGJjMfgwQ22_riyzAX9O-E7yL36b6lc");'></div>
+<div class="absolute inset-0 bg-scanlines opacity-30 pointer-events-none"></div>
+</div>
+<div class="absolute bottom-8 left-8 right-8 bg-black/80 border border-neon-magenta/50 backdrop-blur-md p-4 transform translate-y-0 transition-all duration-500 shadow-[0_0_20px_rgba(188,19,254,0.2)]">
+<div class="flex justify-between items-start mb-3 border-b border-white/10 pb-2">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-neon-cyan animate-pulse text-sm">memory</span>
+<span class="text-white font-cyber text-sm tracking-wider">NÖRAL_ANALİZ_TAMAMLANDI</span>
+</div>
+<span class="text-neon-magenta font-mono font-bold text-xl glitch-text" data-text="94%">94%</span>
+</div>
+<div class="flex items-center gap-3">
+<span class="text-[10px] font-mono text-gray-400">ETKİ_SKORU</span>
+<div class="flex-1 h-2 bg-gray-800 relative overflow-hidden">
+<div class="absolute top-0 left-0 h-full bg-gradient-to-r from-neon-violet to-neon-magenta w-[94%] animate-[pulse_2s_infinite]"></div>
+</div>
+</div>
+<p id="hud-live-feed" class="text-neon-cyan text-xs font-mono mt-3 typewriter">&gt;&gt; Sistem başlatıldı. Veri akışı bekleniyor...</p>
+</div>
+</div>
+<div class="absolute -z-10 -right-10 -bottom-10 w-2/3 h-2/3 border-2 border-neon-violet/20"></div>
+<div class="absolute -z-10 -left-4 -top-4 w-full h-full border border-dashed border-neon-cyan/20"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="relative flex w-full flex-col py-20 bg-black border-y border-neon-cyan/20">
+<div class="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-neon-violet/5 via-black to-black"></div>
+<div class="layout-container flex h-full grow flex-col z-10">
+<div class="px-4 md:px-10 flex flex-1 justify-center">
+<div class="layout-content-container flex flex-col max-w-[1200px] flex-1">
+<div class="flex flex-col gap-2 mb-12 text-center items-center">
+<h3 class="text-white text-3xl md:text-4xl font-cyber font-bold tracking-widest uppercase glitch-text" data-text="ÇOK KANALLI TARAMA">ÇOK KANALLI TARAMA</h3>
+<div class="h-1 w-24 bg-neon-cyan mt-2 mb-4"></div>
+<p class="text-gray-400 font-mono text-sm tracking-wider max-w-lg">&gt;&gt; TÜM ANA GÖRSEL VERİ AKIŞLARIYLA UYUMLU.</p>
+</div>
+<div class="flex w-full grow @container">
+<div class="w-full gap-4 md:gap-6 grid grid-cols-2 md:grid-cols-4 auto-rows-[200px]">
+<div data-category="DISPLAY" class="w-full relative group overflow-hidden border border-gray-800 hover:border-neon-cyan transition-all duration-300 col-span-2 row-span-2 cursor-pointer scan-card">
+<div class="absolute inset-0 bg-center bg-no-repeat bg-cover filter grayscale group-hover:grayscale-0 transition-all duration-500" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuD1814p8JUCkbn4a_xereIe5CRy-Ltxbe9u3u7ESrtrCeG2os1Bpuk8DjG2OEVjKV65uLRY8lgR-mcUCd9XQwCWY_Je1LfUzNymbz52fIbeD0LB7yYBn3oUYYMDn-Wd_dRyPNO3TrFB5XiJYpNtYsY-unScZU43gT3gRRQZoZjsGLDYPRY-yQ1bPQwBclPvINwn4GCpz86ioUPlHayj5kxQsAtyptC2BuXcpLuTDCuecV-8RaskyWmWh_A6kgBIV4vVTBMUrNsljxI");'></div>
+<div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent"></div>
+<div class="absolute top-0 left-0 w-full h-full bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0IiBoZWlnaHQ9IjQiPgo8cmVjdCB3aWR0aD0iNCIgaGVpZ2h0PSI0IiBmaWxsPSIjMDAwIiBmaWxsLW9wYWNpdHk9IjAuNSIvPgo8L3N2Zz4=')] opacity-50"></div>
+<div class="absolute bottom-0 left-0 right-0 p-6 border-t border-neon-cyan/20 bg-black/60 backdrop-blur-sm">
+<div class="text-neon-cyan font-mono text-xs mb-1">TÜR: GÖRÜNTÜLÜ_REKLAMLAR</div>
+<div class="h-[2px] w-full bg-gray-700 overflow-hidden"><div class="h-full bg-neon-cyan w-0 group-hover:w-full transition-all duration-700 ease-out"></div></div>
+</div>
+</div>
+<div data-category="STORIES" class="w-full relative group overflow-hidden border border-gray-800 hover:border-neon-magenta transition-all duration-300 cursor-pointer scan-card">
+<div class="absolute inset-0 bg-center bg-no-repeat bg-cover filter grayscale group-hover:grayscale-0 transition-all duration-500" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuACVT6lMR3iWo7aQb9jb5hU-mLmJu6qR7LWZA2ZHvG94Me5GhWsthC5vPhDbdhHctJC8HkrR7KTJk-vgegdKuZ2NXYw5dQa46AZIubvjITdX6OsVqZqS06Vnj0G6cLJvRet9fLGTtXJq5k4gr8suxD7QeyZgd2jxtIqUVLHaKPOcDbaMRgM1IXSWvM5F1OzYVWKEaLRARnkBrn_YIPpkUt08Y7h65meW0pBePLvV0DrdmEZ59F0zSkoDyoYcB_C7A3bkOg-nrO9_6g");'></div>
+<div class="absolute inset-0 bg-black/50 group-hover:bg-black/20 transition-all"></div>
+<div class="absolute top-2 right-2 text-neon-magenta text-[10px] font-mono opacity-0 group-hover:opacity-100">ID_9335</div>
+<div class="absolute bottom-4 left-4 border-l-2 border-neon-magenta pl-2">
+<span class="text-white font-cyber text-sm tracking-wider block">HİKAYELER</span>
+</div>
+</div>
+<div data-category="FEEDS" class="w-full relative group overflow-hidden border border-gray-800 hover:border-neon-violet transition-all duration-300 cursor-pointer scan-card">
+<div class="absolute inset-0 bg-center bg-no-repeat bg-cover filter grayscale group-hover:grayscale-0 transition-all duration-500" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuAkTTHPRXHanplXeBqflAQKQNvOuIMDZvHNOYDVRDA3IgYpFfS1Gn3SbGmDR5k94gqb0zUE_EWMbirJODtOANj3QrF62njlDsrZNoPoSJFmqktcU8eNI7_5tjdnls4bFBeJdScAchej2jH7aW4n5pwQgO21tF9a9FFZcx0EYNceDjPj1NWRUqt20bi6yV0_RMjI27e_XCGF7ryijTnBFZDNvIOXg1wZV1anbP2bs2Rq2VuVLke4LJr-K0H2dUq4MlsztxSEpLJRIZ4");'></div>
+<div class="absolute inset-0 bg-black/50 group-hover:bg-black/20 transition-all"></div>
+<div class="absolute top-2 right-2 text-neon-violet text-[10px] font-mono opacity-0 group-hover:opacity-100">ID_A655</div>
+<div class="absolute bottom-4 left-4 border-l-2 border-neon-violet pl-2">
+<span class="text-white font-cyber text-sm tracking-wider block">AKIŞLAR</span>
+</div>
+</div>
+<div data-category="EMAIL" class="w-full relative group overflow-hidden border border-gray-800 hover:border-white transition-all duration-300 cursor-pointer scan-card">
+<div class="absolute inset-0 bg-center bg-no-repeat bg-cover filter grayscale group-hover:grayscale-0 transition-all duration-500" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuASLgoHyAbMtpgtODIG5U2AWrRdgLjUVdSqMaxkmeT75TTcqYmdhNqF2NEESIpHEhJB7m50ZfVQ58cgoQiDJTxzy0m__p4V_sct3An8UIHjvQBG3w_74DiiA6jLNJqknHT7CjeWKhQK-pFc9fM7aSE23BcsLEsG_mcIt_XjC8_DwxC9-ORlVz5C4wEiA4eD6jh1Vj0OMmQn1dGt_ktUhZagIBp1osWRdwn8WxFQ4jfVRxjyTAQMCQoQdDDyp3likUyl3GjgsBpOLoo");'></div>
+<div class="absolute inset-0 bg-black/50 group-hover:bg-black/20 transition-all"></div>
+<div class="absolute top-2 right-2 text-white text-[10px] font-mono opacity-0 group-hover:opacity-100">ID_FC91</div>
+<div class="absolute bottom-4 left-4 border-l-2 border-white pl-2">
+<span class="text-white font-cyber text-sm tracking-wider block">E-POSTA</span>
+</div>
+</div>
+<div data-category="WEB_UI" class="w-full relative group overflow-hidden border border-gray-800 hover:border-neon-cyan transition-all duration-300 cursor-pointer scan-card">
+<div class="absolute inset-0 bg-center bg-no-repeat bg-cover filter grayscale group-hover:grayscale-0 transition-all duration-500" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuB2LCxJBThNPoRNwkNrFMUIPy0fz7rGEgpYZoiY9E2ja2NxJp6wwkWsPF35sPqE_ckUPopCDYMQ7SMNzhw06-sYwRAN51ML0MAhqsbFZERGB27cFsPeRPqHfUsafaKEWGW5sFCweohIkcCl9V7WyfZHjIV8R9o2HbGClUKpwl6phl1z1gckf_CRYLMuKxRwqdgoUT9vh2OCcybV5mVVPg4ry1pkGVFnxYwXV7s-pylPcel2-cY9GtMMIzDdsaeQOTdQNjTDMFYH3iw");'></div>
+<div class="absolute inset-0 bg-black/50 group-hover:bg-black/20 transition-all"></div>
+<div class="absolute top-2 right-2 text-neon-cyan text-[10px] font-mono opacity-0 group-hover:opacity-100">ID_18B9</div>
+<div class="absolute bottom-4 left-4 border-l-2 border-neon-cyan pl-2">
+<span class="text-white font-cyber text-sm tracking-wider block">WEB ARAYÜZÜ</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="protocols" class="relative flex w-full flex-col py-24 bg-cyber-dark overflow-hidden">
+<div class="absolute inset-0 bg-[linear-gradient(rgba(188,19,254,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(188,19,254,0.05)_1px,transparent_1px)] bg-[size:20px_20px]"></div>
+<div class="layout-container flex h-full grow flex-col z-10">
+<div class="px-4 md:px-10 flex flex-1 justify-center">
+<div class="layout-content-container flex flex-col max-w-[900px] flex-1">
+<div class="text-center mb-16 relative">
+<h2 class="text-white text-4xl font-cyber font-bold mb-4 tracking-widest uppercase"><span class="text-neon-cyan">&lt;</span> ÇALIŞTIRMA PROTOKOLÜ <span class="text-neon-cyan">/&gt;</span></h2>
+<p class="text-gray-400 font-mono text-sm">3 ADIMLI DİZİYİ BAŞLAT</p>
+</div>
+<div class="grid grid-cols-[80px_1fr] gap-x-8 px-4 relative">
+<div class="absolute left-[39px] top-4 bottom-4 w-[2px] bg-gradient-to-b from-neon-cyan via-neon-magenta to-neon-violet opacity-30"></div>
+<div class="flex flex-col items-center gap-1 pt-2 relative z-10 group">
+<div class="flex items-center justify-center w-20 h-20 bg-black border border-neon-cyan text-neon-cyan clip-path-slant shadow-[0_0_15px_rgba(0,243,255,0.2)] group-hover:shadow-[0_0_25px_rgba(0,243,255,0.5)] transition-all">
+<span class="material-symbols-outlined text-[32px]">upload_file</span>
+</div>
+<div class="font-mono text-[10px] text-neon-cyan mt-2">ADIM_01</div>
+</div>
+<div class="flex flex-1 flex-col pt-4 pb-16 pl-8 border-l border-white/5 hover:bg-white/5 transition-colors p-6 rounded-r-xl border border-transparent hover:border-neon-cyan/20">
+<h3 class="text-white text-2xl font-cyber font-bold leading-tight mb-3 text-neon-cyan">VERİ YÜKLE</h3>
+<p class="text-gray-400 text-base font-tech leading-relaxed">
+                Kaynak materyali ana sunucuya iletin. Sistem JPG, PNG ve MP4 veri akışlarını kabul eder. Nöral ayrıştırma transferden hemen sonra başlar.
+              </p>
+</div>
+<div class="flex flex-col items-center gap-1 pt-2 relative z-10 group">
+<div class="flex items-center justify-center w-20 h-20 bg-black border border-neon-magenta text-neon-magenta clip-path-slant shadow-[0_0_15px_rgba(255,0,255,0.2)] group-hover:shadow-[0_0_25px_rgba(255,0,255,0.5)] transition-all">
+<span class="material-symbols-outlined text-[32px]">psychology</span>
+</div>
+<div class="font-mono text-[10px] text-neon-magenta mt-2">ADIM_02</div>
+</div>
+<div class="flex flex-1 flex-col pt-4 pb-16 pl-8 border-l border-white/5 hover:bg-white/5 transition-colors p-6 rounded-r-xl border border-transparent hover:border-neon-magenta/20">
+<h3 class="text-white text-2xl font-cyber font-bold leading-tight mb-3 text-neon-magenta">PERSONALARI YAPILANDIR</h3>
+<p class="text-gray-400 text-base font-tech leading-relaxed">
+                Hedef demografik simülasyonları seçin. Sentetik izleyici tepkilerini oluşturmak için yaş, konum ve psikografik değişkenleri yapılandırın.
+              </p>
+</div>
+<div class="flex flex-col items-center gap-1 pt-2 relative z-10 group">
+<div class="flex items-center justify-center w-20 h-20 bg-black border border-neon-violet text-neon-violet clip-path-slant shadow-[0_0_15px_rgba(188,19,254,0.2)] group-hover:shadow-[0_0_25px_rgba(188,19,254,0.5)] transition-all">
+<span class="material-symbols-outlined text-[32px]">query_stats</span>
+</div>
+<div class="font-mono text-[10px] text-neon-violet mt-2">ADIM_03</div>
+</div>
+<div class="flex flex-1 flex-col pt-4 pb-6 pl-8 border-l border-white/5 hover:bg-white/5 transition-colors p-6 rounded-r-xl border border-transparent hover:border-neon-violet/20">
+<h3 class="text-white text-2xl font-cyber font-bold leading-tight mb-3 text-neon-violet">BİLGİ EDİN</h3>
+<p class="text-gray-400 text-base font-tech leading-relaxed">
+                Kapsamlı taktik raporunu indirin. Duygusal rezonans, netlik vektörleri ve dönüşüm olasılığı metriklerini analiz edin.
+              </p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="features" class="relative flex w-full flex-col bg-black py-20 md:py-32 border-t border-neon-cyan/30">
+<div class="layout-container flex h-full grow flex-col">
+<div class="px-4 md:px-10 flex flex-1 justify-center">
+<div class="layout-content-container flex flex-col max-w-[1200px] flex-1">
+<div class="flex flex-col lg:flex-row gap-20 px-4">
+<div class="flex flex-col gap-8 lg:w-1/3">
+<h1 class="text-white text-4xl lg:text-5xl font-cyber font-bold leading-tight uppercase glitch-text" data-text="SİSTEM AVANTAJI">
+                SİSTEM <br/><span class="text-neon-cyan">AVANTAJI</span>
+</h1>
+<p class="text-gray-400 text-lg font-tech font-light leading-relaxed border-l-2 border-gray-700 pl-4">
+                Geleneksel A/B testleri artık eskidi. Çok fazla zaman ve sermaye tüketiyor. Yapay zeka simülasyonu anında, sıfır maliyetli tahmine dayalı modelleme sağlar.
+              </p>
+<button id="btn-sample-data" class="flex w-fit items-center gap-3 px-6 py-3 border border-neon-cyan text-neon-cyan hover:bg-neon-cyan hover:text-black transition-all font-mono text-sm tracking-widest uppercase">
+                ÖRNEK VERİYE ERİŞİN
+                <span class="material-symbols-outlined text-sm">code</span>
+</button>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8 lg:w-2/3">
+<div class="hud-border p-8 hover:bg-white/5 transition-all group relative">
+<div class="hud-corner-tr"></div>
+<div class="hud-corner-bl"></div>
+<div class="absolute top-4 right-4 text-[10px] text-gray-600 font-mono group-hover:text-neon-cyan">SYS_MOD_01</div>
+<div class="w-14 h-14 border border-neon-cyan/50 bg-black flex items-center justify-center text-neon-cyan mb-6 group-hover:scale-110 transition-transform shadow-[0_0_10px_rgba(0,243,255,0.2)]">
+<span class="material-symbols-outlined text-[32px]">face_retouching_natural</span>
+</div>
+<h2 class="text-white text-xl font-cyber font-bold mb-3 uppercase">Persona Simülasyonu</h2>
+<p class="text-gray-400 text-sm font-mono leading-relaxed">Hedeflenen demografik gruplardan anında sentetik kullanıcı geri bildirimi oluşturun.</p>
+</div>
+<div class="hud-border p-8 hover:bg-white/5 transition-all group relative">
+<div class="hud-corner-tr border-neon-magenta"></div>
+<div class="hud-corner-bl border-neon-magenta"></div>
+<div class="absolute top-4 right-4 text-[10px] text-gray-600 font-mono group-hover:text-neon-magenta">SYS_MOD_02</div>
+<div class="w-14 h-14 border border-neon-magenta/50 bg-black flex items-center justify-center text-neon-magenta mb-6 group-hover:scale-110 transition-transform shadow-[0_0_10px_rgba(255,0,255,0.2)]">
+<span class="material-symbols-outlined text-[32px]">insights</span>
+</div>
+<h2 class="text-white text-xl font-cyber font-bold mb-3 uppercase">Tahmini Skorlama</h2>
+<p class="text-gray-400 text-sm font-mono leading-relaxed">Yüksek performanslı kreatif veri setleri üzerinde eğitilmiş CTR ve CR tahmin algoritmaları.</p>
+</div>
+<div class="hud-border p-8 hover:bg-white/5 transition-all group relative">
+<div class="hud-corner-tr border-neon-violet"></div>
+<div class="hud-corner-bl border-neon-violet"></div>
+<div class="absolute top-4 right-4 text-[10px] text-gray-600 font-mono group-hover:text-neon-violet">SYS_MOD_03</div>
+<div class="w-14 h-14 border border-neon-violet/50 bg-black flex items-center justify-center text-neon-violet mb-6 group-hover:scale-110 transition-transform shadow-[0_0_10px_rgba(188,19,254,0.2)]">
+<span class="material-symbols-outlined text-[32px]">tips_and_updates</span>
+</div>
+<h2 class="text-white text-xl font-cyber font-bold mb-3 uppercase">Taktiksel Bilgiler</h2>
+<p class="text-gray-400 text-sm font-mono leading-relaxed">Yerleşim, renk doygunluğu ve metin vektörleri için yapay zeka tarafından oluşturulan optimizasyon direktifleri.</p>
+</div>
+<div class="hud-border p-8 hover:bg-white/5 transition-all group relative">
+<div class="hud-corner-tr border-white"></div>
+<div class="hud-corner-bl border-white"></div>
+<div class="absolute top-4 right-4 text-[10px] text-gray-600 font-mono group-hover:text-white">SYS_MOD_04</div>
+<div class="w-14 h-14 border border-white/50 bg-black flex items-center justify-center text-white mb-6 group-hover:scale-110 transition-transform shadow-[0_0_10px_rgba(255,255,255,0.2)]">
+<span class="material-symbols-outlined text-[32px]">bolt</span>
+</div>
+<h2 class="text-white text-xl font-cyber font-bold mb-3 uppercase">Gerçek Zamanlı Döngüler</h2>
+<p class="text-gray-400 text-sm font-mono leading-relaxed">Hızlı döngü yetenekleri. Varyantları yükleyin ve kazananı anında belirleyin.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="relative py-32 px-4 overflow-hidden">
+<div class="absolute inset-0 bg-cyber-black z-0"></div>
+<div class="absolute inset-0 bg-[linear-gradient(to_right,#050505_1px,transparent_1px),linear-gradient(to_bottom,#050505_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] pointer-events-none"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-neon-cyan/10 via-transparent to-transparent z-0"></div>
+<div class="max-w-4xl mx-auto text-center flex flex-col items-center gap-8 relative z-10">
+<h2 class="text-5xl md:text-7xl font-cyber font-black text-white tracking-tighter uppercase mb-4 glitch-text" data-text="ŞİMDİ OPTİMİZE EDİN">
+          ŞİMDİ <span class="text-transparent bg-clip-text bg-gradient-to-r from-neon-violet to-neon-magenta">OPTİMİZE EDİN</span>
+</h2>
+<p class="text-xl text-gray-400 font-tech font-light max-w-2xl border-x border-neon-cyan/20 px-8">
+          Yapay zeka tabanlı ileri görüşlü testleri kullanan pazarlamacıların elit öncü birliğine katılın.
+        </p>
+<div class="flex flex-col sm:flex-row gap-6 mt-8 w-full justify-center">
+<button id="btn-start-analysis" class="relative group bg-neon-cyan text-black h-16 px-12 clip-path-slant hover:bg-white transition-all shadow-[0_0_30px_rgba(0,243,255,0.4)]">
+<span class="text-lg font-cyber font-bold uppercase tracking-widest flex items-center gap-2">
+              Ücretsiz Analizi Başlat
+              <span class="material-symbols-outlined">double_arrow</span>
+</span>
+</button>
+</div>
+<div class="flex items-center gap-2 text-xs font-mono text-neon-cyan/70 mt-4 uppercase tracking-wider">
+<span class="material-symbols-outlined text-[14px]">lock</span>
+          Şifreli Bağlantı • 14 Günlük Deneme Dönemi
+        </div>
+</div>
+</div>
+<footer class="border-t border-neon-cyan/30 bg-cyber-dark py-12 px-4 md:px-10 font-mono text-sm relative">
+<div class="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-neon-cyan to-transparent"></div>
+<div class="max-w-[1200px] mx-auto flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
+<div class="flex flex-col gap-2">
+<div class="flex items-center gap-2 text-white">
+<span class="material-symbols-outlined text-neon-cyan">hub</span>
+<span class="text-lg font-cyber font-bold tracking-widest text-white">GOZGU.AI</span>
+</div>
+<div class="text-[10px] text-gray-500">
+            SİSTEM DURUMU: <span class="text-green-500">ÇALIŞIYOR</span>
+</div>
+</div>
+<div class="flex flex-wrap gap-8 text-gray-400">
+<a class="hover:text-neon-cyan transition-colors" href="#" onclick="alert('SİSTEM DİREKTİFİ: Protokol şifreli. Kamuoyu sürümü bekleniyor.'); return false;">[ GİZLİLİK_PROTOKOLÜ ]</a>
+<a class="hover:text-neon-cyan transition-colors" href="#" onclick="alert('SİSTEM DİREKTİFİ: Protokol şifreli. Kamuoyu sürümü bekleniyor.'); return false;">[ KULLANIM_ŞARTLARI ]</a>
+<a class="hover:text-neon-cyan transition-colors" href="#" onclick="alert('BAĞLANTI KURULDU. Destek yönlendirmesi: support@gozgu.ai'); return false;">[ DESTEK_BAĞLANTISI ]</a>
+</div>
+<div class="text-gray-600 text-xs">
+           © 2026 GOZGU_SİSTEMLERİ. TÜM HAKLARI SAKLIDIR.
+        </div>
+</div>
+</footer>
+
+<!-- AUTH MODAL (Giriş / Kayıt) -->
+<div id="auth-modal" class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/90 backdrop-blur-md transition-opacity duration-300 pointer-events-none opacity-0">
+  <div class="relative w-full max-w-md bg-cyber-dark border border-neon-cyan/30 p-8 shadow-[0_0_40px_rgba(0,243,255,0.15)] transform scale-95 transition-transform duration-300" id="auth-modal-content">
+    <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-neon-cyan to-neon-violet"></div>
+    <div class="absolute top-4 right-4 text-[10px] text-gray-500 font-mono">GÜVENLİ_KANAL</div>
+    
+    <button id="close-auth-modal" class="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors material-symbols-outlined mt-6">close</button>
+    
+    <div class="flex items-center justify-center gap-3 mb-8 select-none">
+      <span class="material-symbols-outlined text-neon-cyan text-3xl">admin_panel_settings</span>
+      <h2 class="text-2xl font-cyber font-bold text-white uppercase tracking-widest"><span class="text-neon-cyan">KULLANICI</span>_ERİŞİMİ</h2>
+    </div>
+
+    <!-- Sekmeler -->
+    <div class="flex border-b border-gray-800 mb-6 font-cyber text-sm tracking-wider uppercase">
+       <button id="tab-login" class="flex-1 py-3 text-neon-cyan border-b-2 border-neon-cyan bg-white/5 transition-colors">GİRİŞ YAP</button>
+       <button id="tab-register" class="flex-1 py-3 text-gray-500 hover:text-white border-b-2 border-transparent transition-colors">KAYIT OL</button>
+    </div>
+    
+    <form id="auth-form" class="space-y-5 relative">
+      <div id="auth-error" class="hidden text-xs text-red-400 font-mono bg-red-900/20 border border-red-500/50 p-2 text-center uppercase">İşlem sırasında hata oluştu</div>
+      <div id="auth-success" class="hidden text-xs text-green-400 font-mono bg-green-900/20 border border-green-500/50 p-2 text-center uppercase">Onay E-postası gönderildi. Lütfen gelen kutunuzu (ve gerekiyorsa spam klasörünü) kontrol edin.</div>
+      
+      <div class="flex flex-col gap-1 text-left relative group">
+        <label class="font-mono text-[10px] text-gray-400 group-focus-within:text-neon-cyan transition-colors">E-POSTA ADRESİ</label>
+        <div class="relative">
+           <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">mail</span>
+           <input type="email" id="auth_email" required class="bg-black border border-gray-800 focus:border-neon-cyan text-white text-sm p-3 pl-10 font-mono outline-none transition-colors w-full placeholder-gray-700" placeholder="ornek@sirket.com" />
+        </div>
+      </div>
+      
+      <div class="flex flex-col gap-1 text-left relative group">
+        <label class="font-mono text-[10px] text-gray-400 group-focus-within:text-neon-cyan transition-colors">ŞİFRE</label>
+        <div class="relative">
+           <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">key</span>
+           <input type="password" id="auth_password" required class="bg-black border border-gray-800 focus:border-neon-cyan text-white text-sm p-3 pl-10 font-mono outline-none transition-colors w-full placeholder-gray-700" placeholder="••••••••" />
+        </div>
+      </div>
+      
+      <button type="submit" id="auth-submit-btn" class="w-full relative group bg-white text-black px-6 py-4 mt-8 font-cyber font-bold tracking-wider uppercase hover:bg-neon-cyan transition-all clip-path-slant">
+        <span class="flex items-center justify-center gap-2">
+          <span id="auth-btn-text">GİRİŞ YAP</span>
+          <span class="material-symbols-outlined text-sm">login</span>
+        </span>
+      </button>
+    </form>
+  </div>
+</div>
+<!-- ========( CHANNEL DETAIL MODAL )======== -->
+<div id="channel-detail-modal" class="fixed inset-0 z-[9998] flex items-center justify-center bg-black/80 backdrop-blur-sm transition-opacity duration-300 pointer-events-none opacity-0">
+  <div id="channel-modal-content" class="relative w-full max-w-3xl bg-cyber-dark border border-neon-cyan/30 shadow-[0_0_40px_rgba(0,243,255,0.15)] transform scale-95 transition-transform duration-300 overflow-y-auto max-h-[90vh] custom-scrollbar">
+    <div id="channel-modal-topbar" class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-neon-cyan via-neon-magenta to-neon-violet"></div>
+    
+    <!-- Header -->
+    <div class="p-6 pb-0 pt-8">
+      <button id="close-channel-modal" class="absolute top-4 right-4 text-gray-400 hover:text-neon-cyan transition-colors material-symbols-outlined z-10">close</button>
+      <div class="flex items-center gap-3 mb-2">
+        <span id="ch-modal-icon" class="material-symbols-outlined text-neon-cyan text-3xl">display_settings</span>
+        <div>
+          <div class="text-gray-500 font-mono text-[10px] uppercase tracking-widest">// KANAL_ANALİZİ</div>
+          <h2 id="ch-modal-title" class="text-2xl font-cyber font-bold text-white uppercase tracking-widest">KANAL ADI</h2>
+        </div>
+      </div>
+      <!-- Tabs -->
+      <div class="flex gap-6 border-b border-white/10 mt-4 mb-0">
+        <button class="ch-tab active pb-3 font-mono text-xs text-gray-400 uppercase tracking-wider" data-tab="simulation">🖼 Simülasyon</button>
+        <button class="ch-tab pb-3 font-mono text-xs text-gray-400 uppercase tracking-wider" data-tab="fit">📊 Platform Skoru</button>
+        <button class="ch-tab pb-3 font-mono text-xs text-gray-400 uppercase tracking-wider" data-tab="personas">👥 Persona Önerileri</button>
+        <button class="ch-tab pb-3 font-mono text-xs text-gray-400 uppercase tracking-wider" data-tab="guide">📐 Tasarım Rehberi</button>
+      </div>
+    </div>
+
+    <!-- Tab Panels -->
+    <div class="p-6">
+
+      <!-- TAB 1: Simülasyon -->
+      <div id="tab-simulation" class="ch-tab-panel active">
+        <p class="text-gray-500 font-mono text-xs mb-5">Reklamınız bu mecrada aşağıdaki gibi görünür. Önizleme, kampanya formu URL'si ile güncellenir.</p>
+        <div id="ch-mockup-wrapper" class="flex items-center justify-center py-4 min-h-[200px]">
+          <!-- Mockup frame JS tarafından enjekte edilir -->
+        </div>
+        <p class="text-center font-mono text-[10px] text-gray-600 mt-3">ÖNİZLEME_ÇERÇEVE_SİMÜLATÖRÜ</p>
+      </div>
+
+      <!-- TAB 2: Platform Skoru -->
+      <div id="tab-fit" class="ch-tab-panel">
+        <p class="text-gray-500 font-mono text-xs mb-6">Bu platformun reklam formatı ve kitlesiyle tahmini uyumluluk skorunuz.</p>
+        <div id="ch-fit-scores" class="space-y-5">
+          <!-- JS tarafından doldurulur -->
+        </div>
+      </div>
+
+      <!-- TAB 3: Persona Önerileri -->
+      <div id="tab-personas" class="ch-tab-panel">
+        <p class="text-gray-500 font-mono text-xs mb-4">Bu kanala en uygun persona arketipleri öne çıkarılmıştır.</p>
+        <div id="ch-persona-list" class="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-72 overflow-y-auto pr-1 custom-scrollbar">
+          <div class="text-gray-600 font-mono text-xs col-span-2 flex items-center gap-2 py-4 justify-center">
+            <span class="material-symbols-outlined animate-spin text-sm">refresh</span> Yükleniyor...
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 4: Tasarım Rehberi -->
+      <div id="tab-guide" class="ch-tab-panel">
+        <p class="text-gray-500 font-mono text-xs mb-5">Bu kanala özel 3 kritik tasarım kuralı ve yaygın hatalar.</p>
+        <div id="ch-design-rules" class="space-y-4 mb-6">
+          <!-- JS tarafından doldurulur -->
+        </div>
+        <div id="ch-design-errors" class="border border-red-500/20 bg-red-900/10 p-4">
+          <p class="text-red-400 font-mono text-[10px] uppercase mb-3">⚠ Yaygın Hatalar</p>
+          <div id="ch-errors-list" class="space-y-2">
+            <!-- JS tarafından doldurulur -->
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Footer CTA -->
+    <div class="px-6 pb-6">
+      <div class="border-t border-white/10 pt-4 flex items-center gap-4">
+        <button id="ch-analyze-btn" class="flex-1 bg-neon-cyan text-black py-3 font-cyber font-bold tracking-wider uppercase hover:bg-white transition-all text-sm flex items-center justify-center gap-2">
+          <span class="material-symbols-outlined text-sm">bolt</span>
+          BU KANALDA ANALİZ ET
+        </button>
+        <button id="close-channel-modal-2" class="border border-gray-700 text-gray-400 hover:text-white py-3 px-5 font-mono text-xs transition-colors">
+          KAPAT
+        </button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div id="campaign-modal" class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm transition-opacity duration-300 pointer-events-none opacity-0">
+  <div class="relative w-full max-w-2xl bg-cyber-dark border border-neon-cyan/30 p-8 shadow-[0_0_30px_rgba(0,243,255,0.2)] transform scale-95 transition-transform duration-300 overflow-y-auto max-h-[90vh] custom-scrollbar" id="modal-content">
+    <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-neon-cyan via-neon-magenta to-neon-violet"></div>
+    
+    <button id="close-modal" class="absolute top-4 right-4 text-gray-400 hover:text-neon-cyan transition-colors material-symbols-outlined">close</button>
+    
+      <h2 class="text-2xl font-cyber font-bold text-white uppercase tracking-widest mb-6 border-b border-white/10 pb-4">
+      <span class="text-neon-cyan">&gt;</span> YENİ_KAMPANYA_YÜKLE
+    </h2>
+
+    <div class="bg-neon-cyan/10 border border-neon-cyan/30 p-4 mb-6 flex gap-4 items-start">
+      <span class="material-symbols-outlined text-neon-cyan">info</span>
+      <div class="text-sm font-tech text-gray-300">
+        <p class="font-bold text-neon-cyan mb-1">DİKKAT: Hızlı Analiz Modu</p>
+        Bu bir demo/hızlı analiz kısmıdır. Ücretsiz sürümde **en fazla 3 persona** seçebilir ve sınırlı metrikleri görebilirsiniz.
+        Tüm personaları kullanmak ve detaylı raporlar için lütfen <a href="dashboard.html" class="text-neon-cyan underline hover:text-white">Analiz Paneli</a>'ne gidin.
+      </div>
+    </div>
+    
+    <form id="campaign-form" class="space-y-4">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="flex flex-col gap-1 text-left">
+          <label class="font-mono text-[10px] text-neon-cyan">KAMPANYA_ADI</label>
+          <input type="text" id="c_name" required class="bg-black/50 border border-gray-700 focus:border-neon-cyan text-white text-sm p-3 font-tech outline-none transition-colors w-full placeholder-gray-600" placeholder="Örn: EcoBreeze Lansman" />
+        </div>
+        <div class="flex flex-col gap-1 text-left">
+          <label class="font-mono text-[10px] text-neon-magenta">HEDEF</label>
+          <select id="c_objective" required class="bg-black/50 border border-gray-700 focus:border-neon-magenta text-white text-sm p-3 font-tech outline-none transition-colors w-full">
+            <option value="Satışı Artırma (Conversion)">Satışı Artırma (Conversion)</option>
+            <option value="Marka Bilinirliği (Awareness)">Marka Bilinirliği (Awareness)</option>
+            <option value="Tıklama Alma (CTR)">Tıklama Alma (CTR)</option>
+          </select>
+        </div>
+      </div>
+      
+      <div class="flex flex-col gap-1 text-left">
+        <label class="font-mono text-[10px] text-neon-cyan">REKLAM_SLOGANI</label>
+        <input type="text" id="c_slogan" required class="bg-black/50 border border-gray-700 focus:border-neon-cyan text-white text-sm p-3 font-tech outline-none transition-colors w-full placeholder-gray-600" placeholder="Reklam metni veya başlık" />
+      </div>
+      
+      <div class="flex flex-col gap-1 text-left">
+        <label class="font-mono text-[10px] text-neon-cyan">MEDYA_URL</label>
+        <input type="url" id="c_media_url" required class="bg-black/50 border border-gray-700 focus:border-neon-cyan text-white text-sm p-3 font-tech outline-none transition-colors w-full placeholder-gray-600" placeholder="Görsel linki (https://...)" />
+      </div>
+            <div class="flex flex-col gap-1 text-left">
+        <label class="font-mono text-[10px] text-neon-cyan">HEDEF_KİTLE</label>
+        <textarea id="c_audience" required rows="2" class="bg-black/50 border border-gray-700 focus:border-neon-cyan text-white text-sm p-3 font-tech outline-none transition-colors w-full placeholder-gray-600 resize-none" placeholder="Kimleri hedefliyorsun?"></textarea>
+      </div>
+
+      <!-- Segment Seçimi (Global - Kilitli Demo Görüntüsü) -->
+      <div id="segment-selection-container" class="space-y-3 border border-neon-magenta/20 p-4 bg-neon-magenta/5 mt-4 relative overflow-hidden">
+        
+        <!-- Kilit Katmanı (Overlay) -->
+        <div class="absolute inset-0 bg-black/80 backdrop-blur-[2px] z-10 flex flex-col items-center justify-center p-4 text-center border border-neon-magenta/30">
+            <span class="material-symbols-outlined text-neon-magenta text-3xl mb-2">lock</span>
+            <span class="text-white font-cyber text-sm tracking-wider uppercase mb-1">PREMİUM ÖZELLİK KİLİTLİ</span>
+            <span class="text-gray-400 font-mono text-[10px] leading-relaxed max-w-[90%]">Geniş kitle hedefleme ve segmentasyon algoritmaları, yalnızca Panel üzerinden tam erişim sağlayan kayıtlı kullanıcılara açıktır.</span>
+        </div>
+
+        <div class="opacity-20 pointer-events-none relative z-0">
+            <div class="flex justify-between items-center mb-2">
+               <h3 class="text-xs font-mono text-gray-500 italic">// 02. GRUP_SEGMENTLEME (GENİŞ KİTLE)</h3>
+            </div>
+            <div id="segment-selection-grid" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+               <!-- JS ile Doldurulacak -->
+            </div>
+        </div>
+      </div>
+
+      <!-- Persona Seçimi -->
+      <div class="space-y-4 border border-white/5 p-4 bg-black/40 mt-4">
+        <div class="flex justify-between items-center mb-2">
+           <h3 class="text-xs font-mono text-gray-400">// 03. HEDEF_PERSONALARI_SEÇ (MAKS 3)</h3>
+           <span class="text-[10px] font-mono text-neon-cyan px-2 py-0.5 border border-neon-cyan/30 bg-neon-cyan/10" id="selected-persona-count">0/3 SEÇİLDİ</span>
+        </div>
+        
+        <div id="persona-selection-grid" class="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-64 overflow-y-auto pr-2 custom-scrollbar">
+           <div class="text-gray-500 font-mono text-xs py-4 text-center w-full col-span-2 flex items-center justify-center gap-2">
+             <span class="material-symbols-outlined animate-spin text-sm">refresh</span> Personalar yükleniyor...
+           </div>
+        </div>
+        <p id="persona-error" class="text-xs font-mono text-red-500 hidden mt-2">Hata: Lütfen en az 1, en fazla 3 persona seçin.</p>
+      </div>
+      
+      <div id="loading-indicator" class="hidden flex items-center justify-center gap-2 py-2 text-neon-magenta font-mono text-sm">
+        <span class="material-symbols-outlined animate-spin text-neon-magenta">refresh</span>
+        <span>ANA SUNUCUYA YÜKLENİYOR...</span>
+      </div>
+
+      <button type="submit" id="submit-btn" class="w-full relative group bg-neon-cyan text-black px-6 py-4 mt-4 font-cyber font-bold tracking-wider uppercase hover:bg-white transition-all">
+        <span class="flex items-center justify-center gap-2">
+          ÇALIŞTIR // YÜKLE
+          <span class="material-symbols-outlined text-sm">terminal</span>
+        </span>
+      </button>
+    </form>
+  </div>
+</div>
+
+<!-- DEMO MODAL (View Simulation) -->
+<div id="demo-modal" class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/95 backdrop-blur-xl transition-opacity duration-300 pointer-events-none opacity-0">
+  <div class="relative w-full max-w-4xl bg-cyber-dark border border-neon-cyan/30 p-8 shadow-[0_0_50px_rgba(0,243,255,0.2)] transform scale-95 transition-transform duration-300 overflow-y-auto max-h-[90vh]" id="demo-modal-content">
+    <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-neon-cyan via-white to-neon-magenta shadow-[0_0_15px_rgba(0,243,255,0.5)]"></div>
+    <button id="close-demo-modal" class="absolute top-6 right-6 text-gray-400 hover:text-neon-cyan transition-colors material-symbols-outlined z-50">close</button>
+    
+    <div class="flex flex-col gap-8">
+      <div class="flex flex-col md:flex-row gap-8 items-start">
+        <div class="w-full md:w-1/2 aspect-square border border-neon-cyan/30 relative overflow-hidden group">
+          <img src="https://images.unsplash.com/photo-1544396821-4ea2e088ba77?q=80&w=1000" class="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700" id="demo-creative" />
+          <div class="absolute inset-0 bg-scanlines opacity-20 pointer-events-none"></div>
+          <div class="absolute bottom-4 left-4 bg-black/80 border border-neon-cyan px-3 py-1 text-[10px] font-mono text-neon-cyan">DEMO_UPLINK_STABLE</div>
+        </div>
+        
+        <div class="w-full md:w-1/2 flex flex-col gap-6">
+          <div>
+            <h3 class="text-neon-cyan font-cyber text-2xl tracking-widest mb-2 uppercase glitch-text" data-text="NEUROSYNC_HALKA">NEUROSYNC_HALKA</h3>
+            <p class="text-gray-400 font-tech text-sm leading-relaxed border-l-2 border-neon-magenta pl-4">"Dinlenmende ustalaş. Sınırsız uyan."</p>
+          </div>
+          
+          <div class="grid grid-cols-2 gap-4">
+            <div class="bg-black/40 border border-white/10 p-4 hud-border">
+              <span class="text-[10px] font-mono text-gray-500 block mb-1">ETKİ_SKORU</span>
+              <span class="text-3xl font-cyber text-neon-cyan">94%</span>
+            </div>
+            <div class="bg-black/40 border border-white/10 p-4 hud-border">
+              <span class="text-[10px] font-mono text-gray-500 block mb-1">DÖNÜŞÜM_OLASILIĞI</span>
+              <span class="text-3xl font-cyber text-neon-magenta">YÜKSEK</span>
+            </div>
+          </div>
+          
+          <div class="bg-black/40 border border-white/10 p-4 hud-border relative overflow-hidden">
+            <div class="flex items-center gap-3 mb-3">
+              <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuDOFxaV0nMI5s_BDYQP_ZeYpvOqYRb4IAIQnLX20D6TSSnZm8C26mLMRFHXbUeEoCdxu1ZpZe9koGBiY63sTOYGZz_yAS5IGKDd1MKD8SIzrOWGBdIcGuI1CICVCJ2v2GA5-z1FT4XaFJv9oeEl02X7taPrmwzAqbFfDyPCbadoIIYz3UOtONM8F_6OtZqrJNyozLq8iJ-zEfbFl-DsNjzax9ftFT155lbEuKLXNxmrIEBJmSPq9wtYXPmzslosKy-NlyXuUQoBCQI" class="w-10 h-10 border border-neon-cyan" />
+              <div>
+                <span class="text-white font-cyber text-xs block">YZ PERSONA: MAX</span>
+                <span class="text-[10px] text-neon-cyan font-mono uppercase tracking-widest">KARAR: OLUMLU (SATIN ALIR)</span>
+              </div>
+            </div>
+            <p class="text-gray-400 text-xs font-mono leading-relaxed bg-black/60 p-3 border-l border-neon-cyan italic">
+              "Teknik şeffaflık ve dinlenme optimizasyonuna odaklanma doğrudan verimlilik hedeflerime hitap ediyor. 30 günlük garanti, risk faktörünü etkili bir şekilde ortadan kaldırıyor."
+            </p>
+          </div>
+        </div>
+      </div>
+      
+      <div class="text-center pt-8 border-t border-white/10">
+        <p class="text-gray-500 font-mono text-xs uppercase tracking-widest mb-4">Kampanyalarınız için böyle sonuçlarla ilgilenir misiniz?</p>
+        <button id="btn-demo-cta" class="bg-neon-cyan text-black px-10 py-3 font-cyber font-bold uppercase tracking-wider hover:bg-white transition-all transform hover:scale-105 shadow-[0_0_20px_rgba(0,243,255,0.3)]">
+          Kendi Analizinizi Başlatın
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="theme.js"></script>
+<script type="module" src="app.js"></script>
+</body></html>
