@@ -1,111 +1,143 @@
-# Stitch AI — Ad Analyzer Platform
+<div align="center">
+  <h1>🧠 Stitch AI — Ad Analyzer Platform</h1>
+  <p><b>Advanced AI-powered advertisement analysis platform simulating 52 demographically calibrated personas.</b></p>
+  <p>Predict campaign performance, optimize creatives, and understand consumer psychology before spending a dime on ads.</p>
+</div>
 
-AI-powered advertisement analysis platform that simulates **52 demographically calibrated personas** to predict campaign performance before launch.
+---
 
-## 🎯 Overview
+## 🎯 Platform Vision & Overview
 
-Stitch AI uses large language models (Gemini) to simulate how real people from different demographic segments would react to your advertisement. Each persona has unique psychological profiles (Big Five traits), socioeconomic backgrounds, and behavioral patterns based on Turkish demographic data (TÜİK/TÜAD).
+Stitch AI is not just an A/B testing tool; it is a **synthetic market simulation environment**. By leveraging Large Language Models (Gemini), advanced Computer Vision (SmolVLM2), and Audio Processing (Whisper), Stitch AI creates a digital twin of your target audience. 
 
-### Key Features
+It simulates how real people—with unique psychological profiles, socio-economic backgrounds, and current economic realities—will react to your advertisement. 
 
-- **AIDA Analysis** — Attention, Interest, Desire, Action scoring per persona
-- **52 Persona Ecosystem** — Segmented by SES (AB, C1, C2_DE), generation, gender
-- **Real-time Economic Context** — Macro-economic data integration (CPI, exchange rates)
-- **Cultural Trend Radar** — Social media trend tracking with PR risk scoring
-- **Media AI Analysis** — Visual analysis (SmolVLM2) + audio transcription (Whisper)
-- **Heatmap Analysis** — OpenCV.js powered saliency maps on ad creatives
-- **AI Optimization** — Automatic slogan, visual concept, and psychological trigger suggestions
-- **PDF Reporting** — Comprehensive campaign analysis reports
-- **Multi-channel Support** — Display, Stories, Feeds, Email, Web UI
-- **Dark/Light Theme** — Professional UI with theme persistence
+### 🚀 Roadmap
+- **Phase 1 (Current):** Parallel independent persona simulations, generating AIDA scores and individual feedback based on real-time economic snapshots.
+- **Phase 2 (Upcoming - "Palantir Ontology"):** Transitioning to a Graph Database (Knowledge Graph) and Multi-Agent Network. Personas will interact with each other, generating "Word-of-Mouth" effects, social proof cascades, and dynamic viral trend simulations.
 
-## 🏗️ Tech Stack
+---
 
-| Layer | Technology |
-|-------|-----------|
-| Frontend | Vite + Vanilla JS + Tailwind CSS |
-| Backend | Supabase (Auth, PostgreSQL, Storage) |
-| Automation | n8n (webhook-driven workflows) |
-| AI Models | Google Gemini, SmolVLM2, Whisper |
-| Charts | Chart.js |
-| Image Processing | OpenCV.js, heatmap.js |
-| PDF | pdfMake |
+## ✨ Core Capabilities
 
-## 📁 Project Structure
+### 1. The 52 Persona Ecosystem
+Built on Turkish demographic data (TÜİK/TÜAD), the platform hosts 52 distinct personas. Each persona is defined by:
+- **Big Five Personality Traits:** Openness, Conscientiousness, Extraversion, Agreeableness, Neuroticism.
+- **Socio-Economic Status (SES):** AB, C1, C2_DE groups.
+- **Generational & Life Stage Data:** Single, Married, DINKs (Double Income No Kids), Retirees.
+- **Archetypes & Shopping Drivers:** From "The Magician" seeking ROI to "The Caregiver" seeking safety.
 
-```
-├── index.html              # Landing page (auth, campaign creation)
-├── app.js                  # Landing page logic (login/signup, modals)
-├── new-analysis.html       # 3-step campaign creation wizard
-├── new-analysis.js         # Wizard logic (persona selection, video upload)
-├── dashboard.html          # Analysis dashboard (5-tab system)
-├── dashboard.js            # Dashboard engine (polling, rendering, charts)
-├── create-segment.html     # Custom segment builder
-├── create-segment.js       # Segment creation logic
-├── supabase-config.js      # Supabase client initialization
-├── theme.css               # Design system & theming
-├── theme.js                # Dark/light mode toggle
-├── .env.example            # Environment variables template
-├── .gitignore              # Git ignore rules
-└── package.json            # Project dependencies
-```
+### 2. AIDA Psychological Scoring
+Every persona evaluates the ad across the AIDA funnel:
+- **Attention:** Did the visual/hook grab them in the first 3 seconds?
+- **Interest:** Does it resonate with their daily struggles and economic reality?
+- **Desire:** Does it trigger their specific psychological vulnerabilities (FOMO, status, logic)?
+- **Action:** The final probability of clicking or purchasing.
+
+### 3. Context-Aware Simulation (Economic & Cultural)
+Personas do not exist in a vacuum. Before analyzing an ad, Stitch AI injects real-time **Macro-Economic Snapshots** (CPI, exchange rates) and **Cultural Trends**. A "panic saver" persona will react differently to a luxury ad during high inflation compared to an "unfazed" persona.
+
+### 4. Advanced Media Processing
+- **SmolVLM2:** Deep visual analysis extracting color palettes, focal points, and visual hierarchy.
+- **Whisper:** Audio transcription and sentiment analysis of the voiceover/music.
+- **OpenCV.js:** Heatmap generation highlighting the most salient parts of the ad creative.
+
+---
+
+## 🏗️ Technical Architecture & Stack
+
+Stitch AI operates on a modern, decoupled architecture relying heavily on webhook-driven microservices.
+
+| Layer | Technologies Used | Purpose |
+|-------|------------------|---------|
+| **Frontend** | Vite, Vanilla JS, Tailwind CSS, Chart.js | Lightning-fast UI, dynamic dashboards, and PDF report generation. |
+| **Backend/BaaS** | Supabase (PostgreSQL, Auth, Storage) | User authentication, relational data storage, and secure media hosting. |
+| **Orchestration** | n8n (Node-based workflow automation) | Manages the complex API chains, loops through 52 personas, and handles async AI tasks. |
+| **AI Layer** | Google Gemini (Pro/Flash), SmolVLM2, Whisper | Cognitive processing, sentiment analysis, and creative optimization. |
+
+### 🗄️ Database Schema (PostgreSQL)
+- `personas`: Core definitions of the 52 synthetic identities.
+- `segments` / `segment_personas`: Custom audience grouping logic.
+- `campaigns`: Ad metadata, media URLs, and targeting logic.
+- `analysis_results`: Granular JSON dumps of every persona's AIDA scores and inner monologue.
+- `macro_economic_snapshots`: Historical and current economic indicators (CPI, USD/TRY).
+- `cultural_trend_snapshots`: Social media trend tracking.
+
+---
 
 ## 🚀 Getting Started
 
-### Prerequisites
+Follow these instructions to set up the development environment locally.
 
-- Node.js 18+
-- A [Supabase](https://supabase.com) project
-- An [n8n](https://n8n.io) instance with configured workflows
+### Prerequisites
+1. **Node.js** (v18 or higher)
+2. **Supabase Project:** You need a free/pro Supabase instance for database and auth.
+3. **n8n Instance:** Self-hosted or cloud n8n for workflow automation.
+4. **API Keys:** Google Gemini API Key.
 
 ### Installation
 
-```bash
-# Clone the repository
-git clone https://github.com/YOUR_USERNAME/stitch-ai-ad-analyzer.git
-cd stitch-ai-ad-analyzer
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/YOUR_USERNAME/stitch-ai-ad-analyzer.git
+   cd stitch-ai-ad-analyzer
+   ```
 
-# Install dependencies
-npm install
+2. **Install dependencies:**
+   ```bash
+   npm install
+   ```
 
-# Configure environment variables
-cp .env.example .env
-# Edit .env with your actual credentials
+3. **Environment Setup:**
+   Copy the example environment file and fill in your credentials.
+   ```bash
+   cp .env.example .env
+   ```
+   **Required `.env` Variables:**
+   ```env
+   VITE_SUPABASE_URL=https://your-project-ref.supabase.co
+   VITE_SUPABASE_ANON_KEY=your-supabase-anon-key
+   VITE_N8N_ANALYZE_WEBHOOK_URL=https://your-n8n-instance.com/webhook/analyze
+   VITE_N8N_OPTIMIZE_WEBHOOK_URL=https://your-n8n-instance.com/webhook/optimize
+   ```
 
-# Start development server
-npm run dev
+4. **Start the Development Server:**
+   ```bash
+   npm run dev
+   ```
+
+---
+
+## 📁 Project Structure
+
+```text
+stitch-ai-ad-analyzer/
+├── index.html              # Authentication & Landing Page
+├── app.js                  # Global application logic & Auth handlers
+├── new-analysis.html       # Campaign Creation Wizard (3-Steps)
+├── new-analysis.js         # Wizard logic, media upload (Supabase Storage)
+├── dashboard.html          # Comprehensive Analysis Dashboard
+├── dashboard.js            # Engine for rendering charts, heatmaps, AI suggestions
+├── create-segment.html     # Custom Persona Segment Builder
+├── create-segment.js       # Segment CRUD operations
+├── supabase-config.js      # Supabase Client Initialization
+├── theme.css               # Global Tailwind & Custom CSS directives
+└── theme.js                # Dark/Light mode persistence
 ```
 
-### Environment Variables
+---
 
-| Variable | Description |
-|----------|-------------|
-| `VITE_SUPABASE_URL` | Your Supabase project URL |
-| `VITE_SUPABASE_ANON_KEY` | Your Supabase anonymous key |
-| `VITE_N8N_ANALYZE_WEBHOOK_URL` | n8n webhook URL for campaign analysis |
-| `VITE_N8N_OPTIMIZE_WEBHOOK_URL` | n8n webhook URL for campaign optimization |
+## 📊 Dashboard Modules
 
-## 📊 Dashboard Tabs
+The analysis results are presented in a 5-tab comprehensive dashboard:
+1. **Overview:** Funnel conversion rates, overall 'Will Buy' percentages, and top responding personas.
+2. **Demographics:** Heatmaps correlating SES groups with generation and emotion frequency.
+3. **Persona Intel:** Granular view of each persona's "Fast Reaction", "Slow Reaction", and "Final Verdict".
+4. **Media Analysis:** Breakdown of visual and audio cues, accompanied by OpenCV saliency heatmaps.
+5. **Optimization:** AI-generated actionable advice to improve slogans, visuals, and psychological triggers.
 
-1. **Overview** — Conversion funnel, will-buy donut chart, top/bottom personas
-2. **Demographic Analysis** — SES breakdown, generation charts, cross-tab heatmap, emotion frequency map
-3. **Persona Intel** — Individual persona cards with filtering (SES, generation, gender, buy status)
-4. **Media Analysis** — SmolVLM2 visual analysis, Whisper transcription, OpenCV heatmap
-5. **Optimization** — AI-powered creative suggestions, Pomelli prompt generation
+---
 
-## 🗄️ Database Schema
+## 📄 License & Proprietary Notice
 
-The platform uses 9 interconnected PostgreSQL tables:
-
-- `personas` — 52 calibrated personas with Big Five traits, SES data
-- `segments` / `segment_personas` — Persona grouping system
-- `campaigns` — Campaign data including media analysis results
-- `analysis_results` — AIDA scores, emotions, buy decisions per persona
-- `campaign_optimizations` — AI optimization suggestions
-- `macro_economic_snapshots` — Real-time economic indicators
-- `cultural_trend_snapshots` — Social media trends and risk levels
-- `profiles` — User profiles and subscription plans
-
-## 📄 License
-
-This project is proprietary software. All rights reserved.
+This project is proprietary software. All rights reserved. Unauthorized copying, modification, or distribution is strictly prohibited.
