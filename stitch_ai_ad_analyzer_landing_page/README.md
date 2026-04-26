@@ -1,5 +1,5 @@
 <div align="center">
-  <h1>🧠 Stitch AI — Ad Analyzer Platform</h1>
+  <h1>Gözgü AI — Ad Analyzer Platform</h1>
   <p><b>Advanced AI-powered advertisement analysis platform simulating 52 demographically calibrated personas.</b></p>
   <p>Predict campaign performance, optimize creatives, and understand consumer psychology before spending a dime on ads.</p>
 </div>
@@ -8,17 +8,28 @@
 
 ## 🎯 Platform Vision & Overview
 
-Stitch AI is not just an A/B testing tool; it is a **synthetic market simulation environment**. By leveraging Large Language Models (Gemini), advanced Computer Vision (SmolVLM2), and Audio Processing (Whisper), Stitch AI creates a digital twin of your target audience. 
+Gözgü AI AI is not just an A/B testing tool; it is a **synthetic market simulation environment**. By leveraging Large Language Models (Gemini), advanced Computer Vision (SmolVLM2), and Audio Processing (Whisper), Gözgü AI AI creates a digital twin of your target audience. 
 
 It simulates how real people—with unique psychological profiles, socio-economic backgrounds, and current economic realities—will react to your advertisement. 
 
-### 🚀 Roadmap
-- **Phase 1 (Current):** Parallel independent persona simulations, generating AIDA scores and individual feedback based on real-time economic snapshots.
-- **Phase 2 (Upcoming - "Palantir Ontology"):** Transitioning to a Graph Database (Knowledge Graph) and Multi-Agent Network. Personas will interact with each other, generating "Word-of-Mouth" effects, social proof cascades, and dynamic viral trend simulations.
+###  Roadmap
+
+**Phase 1 (Current): The Static Simulation**
+Parallel, independent persona simulations generating AIDA scores and individual feedback based on real-time economic snapshots. Personas act in isolation, simulating a single exposure to an ad.
+
+**Phase 2 (Upcoming): The "Palantir" Ontology & Multi-Agent Network**
+Transitioning from a flat relational database to a multidimensional **Knowledge Graph** (Graph Database). In this phase, Gözgü AI AI evolves into a complex adaptive system where personas are no longer isolated—they interact, influence, and cascade information, similar to Palantir's ontological models.
+
+Key Phase 2 Features:
+- **Knowledge Graph Architecture (Neo4j):** Everything becomes a connected Node. Personas, Ad Campaigns, Brands, Macro-Economic Events, and Cultural Trends will be dynamically linked by Edges (e.g., `[Persona A] -[INFLUENCES]-> [Persona B]`, `[MacroEvent] -[IMPACTS]-> [Persona C]`).
+- **Viral & Word-of-Mouth Simulation:** If a "Trendsetter" persona (high Openness, high Status) reacts positively to an ad, the system dynamically passes this data to "Follower" personas in their network as Social Proof. You can watch an ad go viral or fail within the simulated society.
+- **Temporal Event Cascades:** Simulating time. What happens to campaign performance when the Central Bank raises interest rates mid-campaign? The Knowledge Graph ripples this macro-event through the network, instantly altering the purchasing power and psychology of vulnerable personas.
+- **Multi-Agent Conversational Framework:** Transitioning from single-shot LLM prompts to an agentic framework (e.g., LangGraph). Personas will be able to "debate" products with each other in simulated focus groups.
+- **Network Visualization:** A visual, interactive node-link diagram on the dashboard, allowing marketers to trace exactly *who* influenced *whom* to buy their product.
 
 ---
 
-## ✨ Core Capabilities
+##  Core Capabilities
 
 ### 1. The 52 Persona Ecosystem
 Built on Turkish demographic data (TÜİK/TÜAD), the platform hosts 52 distinct personas. Each persona is defined by:
@@ -35,7 +46,7 @@ Every persona evaluates the ad across the AIDA funnel:
 - **Action:** The final probability of clicking or purchasing.
 
 ### 3. Context-Aware Simulation (Economic & Cultural)
-Personas do not exist in a vacuum. Before analyzing an ad, Stitch AI injects real-time **Macro-Economic Snapshots** (CPI, exchange rates) and **Cultural Trends**. A "panic saver" persona will react differently to a luxury ad during high inflation compared to an "unfazed" persona.
+Personas do not exist in a vacuum. Before analyzing an ad, Gözgü AI AI injects real-time **Macro-Economic Snapshots** (CPI, exchange rates) and **Cultural Trends**. A "panic saver" persona will react differently to a luxury ad during high inflation compared to an "unfazed" persona.
 
 ### 4. Advanced Media Processing
 - **SmolVLM2:** Deep visual analysis extracting color palettes, focal points, and visual hierarchy.
@@ -44,9 +55,9 @@ Personas do not exist in a vacuum. Before analyzing an ad, Stitch AI injects rea
 
 ---
 
-## 🏗️ Technical Architecture & Stack
+##  Technical Architecture & Stack
 
-Stitch AI operates on a modern, decoupled architecture relying heavily on webhook-driven microservices.
+Gözgü AI AI operates on a modern, decoupled architecture relying heavily on webhook-driven microservices.
 
 | Layer | Technologies Used | Purpose |
 |-------|------------------|---------|
@@ -55,7 +66,7 @@ Stitch AI operates on a modern, decoupled architecture relying heavily on webhoo
 | **Orchestration** | n8n (Node-based workflow automation) | Manages the complex API chains, loops through 52 personas, and handles async AI tasks. |
 | **AI Layer** | Google Gemini (Pro/Flash), SmolVLM2, Whisper | Cognitive processing, sentiment analysis, and creative optimization. |
 
-### 🗄️ Database Schema (PostgreSQL)
+###  Database Schema (PostgreSQL)
 - `personas`: Core definitions of the 52 synthetic identities.
 - `segments` / `segment_personas`: Custom audience grouping logic.
 - `campaigns`: Ad metadata, media URLs, and targeting logic.
@@ -65,7 +76,7 @@ Stitch AI operates on a modern, decoupled architecture relying heavily on webhoo
 
 ---
 
-## 🚀 Getting Started
+##  Getting Started
 
 Follow these instructions to set up the development environment locally.
 
@@ -79,8 +90,8 @@ Follow these instructions to set up the development environment locally.
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/YOUR_USERNAME/stitch-ai-ad-analyzer.git
-   cd stitch-ai-ad-analyzer
+   git clone https://github.com/YOUR_USERNAME/Gözgü AI-ai-ad-analyzer.git
+   cd Gözgü AI-ai-ad-analyzer
    ```
 
 2. **Install dependencies:**
@@ -108,10 +119,10 @@ Follow these instructions to set up the development environment locally.
 
 ---
 
-## 📁 Project Structure
+##  Project Structure
 
 ```text
-stitch-ai-ad-analyzer/
+Gözgü AI-ai-ad-analyzer/
 ├── index.html              # Authentication & Landing Page
 ├── app.js                  # Global application logic & Auth handlers
 ├── new-analysis.html       # Campaign Creation Wizard (3-Steps)
@@ -127,7 +138,7 @@ stitch-ai-ad-analyzer/
 
 ---
 
-## 📊 Dashboard Modules
+##  Dashboard Modules
 
 The analysis results are presented in a 5-tab comprehensive dashboard:
 1. **Overview:** Funnel conversion rates, overall 'Will Buy' percentages, and top responding personas.
@@ -136,8 +147,5 @@ The analysis results are presented in a 5-tab comprehensive dashboard:
 4. **Media Analysis:** Breakdown of visual and audio cues, accompanied by OpenCV saliency heatmaps.
 5. **Optimization:** AI-generated actionable advice to improve slogans, visuals, and psychological triggers.
 
----
 
-## 📄 License & Proprietary Notice
 
-This project is proprietary software. All rights reserved. Unauthorized copying, modification, or distribution is strictly prohibited.
